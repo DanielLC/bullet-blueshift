@@ -1,0 +1,29 @@
+# I got this from Claude.ai
+
+# Godot
+.godot/
+.import/
+imported/
+export.cfg
+export_presets.cfg
+logs/
+*.tmp
+
+# Mono / C#
+.mono/
+*.user
+*.mdb
+*.pdb
+bin/
+obj/
+.vs/
+
+# OS cruft
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Editor
+.vscode/

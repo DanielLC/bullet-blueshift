@@ -1,0 +1,19 @@
+[gd_scene load_steps=5 format=3 uid="uid://cg8hwelt427b1"]
+
+[ext_resource type="Script" uid="uid://dj170nd4yrefg" path="res://main/Entity.cs" id="1_ql5c0"]
+[ext_resource type="Texture2D" uid="uid://cbidhqxrgy160" path="res://icon.svg" id="2_avva3"]
+[ext_resource type="Material" uid="uid://bq8oc8lwvet01" path="res://shader/compound_material.tres" id="3_g4su7"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_avva3"]
+
+[node name="Entity" type="Node2D"]
+script = ExtResource("1_ql5c0")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+visible = false
+texture = ExtResource("2_avva3")
+
+[node name="MeshInstance2D" type="MeshInstance2D" parent="."]
+material = ExtResource("3_g4su7")
+mesh = SubResource("QuadMesh_avva3")
+texture = ExtResource("2_avva3")

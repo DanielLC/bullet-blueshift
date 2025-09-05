@@ -1,0 +1,7 @@
+TODO:
+
+Version control
+Sprites
+Make it so enemies can spin
+Separate compound_shader into shader include files
+Add in scripting language
