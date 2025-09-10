@@ -39,7 +39,8 @@ public partial class Hyperbola : Path
     public override PointOfReference PointOfReferenceAtTime(float s)
     {
         var t = Time(s);
-        return new PointOfReference(Position2(t), Velocity2(t));
+        var k = Mathf.Sqrt(t * t + 1 / (accel * accel));
+        return new PointOfReference(new Event(0, k, t), new Velocity(0, t / k));
     }
 
     private float FindConeIntersectionT(Event e, float sign)

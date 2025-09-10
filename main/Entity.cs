@@ -8,7 +8,7 @@ public partial class Entity : Node2D
 	private ShaderMaterial shader;
 	private float size;
 
-	public void Initialize(Player player, float size, PointOfReference pointOfReference)
+	public void Initialize(Player player, float size, PointOfReference pointOfReference, float rotationSpeed)
 	{
 		GD.Print("Entity spawned.");
 		this.player = player;
@@ -20,16 +20,16 @@ public partial class Entity : Node2D
 			sprite.Material = shader;
 			shader.SetShaderParameter("size", size);
 			shader.SetShaderParameter("scale", new Vector2(1f, 1f)); //TODO: This shouldn't be hardcoded.
-			shader.SetShaderParameter("spin_speed", 1f); //TODO: This shouldn't be hardcoded.
+			shader.SetShaderParameter("spin_speed", rotationSpeed);
 		}
 		sprite.Scale = new Vector2(size, size) * 4;
 		this.size = size;
-		path = new Compound(shader, pointOfReference);
+		path = new Compound(shader, pointOfReference, rotationSpeed);
 	}
 
-	public void Initialize(Player player, float size)
+	public void Initialize(Player player, float size, float rotationSpeed)
 	{
-		Initialize(player, size, PointOfReference.IDENTITY);
+		Initialize(player, size, PointOfReference.IDENTITY, rotationSpeed);
 	}
 
 	public void Update()

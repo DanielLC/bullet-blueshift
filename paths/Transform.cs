@@ -5,39 +5,41 @@ public partial class Transform : Path
 {
     private Path path;
     public PointOfReference pathTransform;
-    public PointOfReference spriteTransform;
+    public float rotation;
 
     //I could add versions of this where you pass in fewer things. I'll just see what I need.
-    public Transform(Path path, PointOfReference pathTransform, PointOfReference spriteTransform)
+    public Transform(Path path, PointOfReference pathTransform, float initialRotation)
     {
         //This should combine Transforms, but I couldn't get it to work, and I ended up modifying how I do this so I don't need it.
         if (path is Transform)
             throw new InvalidOperationException("Path cannot be a Transform.");
         this.path = path;
         this.pathTransform = pathTransform;
-        this.spriteTransform = spriteTransform;
+        this.rotation = initialRotation;
+        //GD.Print($"rotationSpeed: {rotationSpeed}, initialRotation: {initialRotation}");
     }
 
-    public Transform(Path path, PointOfReference pathTransform) : this(path, pathTransform, PointOfReference.IDENTITY) { }
+    public Transform(Path path, PointOfReference pathTransform) : this(path, pathTransform, 0) { }
 
     public override PointOfReference PointOfReferenceAtTime(float s)
     {
-        return pathTransform * path.PointOfReferenceAtTime(s) * spriteTransform.Inverse();
+        return pathTransform * path.PointOfReferenceAtTime(s) * PointOfReference.FromRotation(-rotation);
     }
 
-    //TODO:Is this right? I feel like spriteTransform should be involved.
     public override Event Event(float s)
     {
         return pathTransform * path.Event(s);
     }
 
+    //Doesn't include rotation. That shouldn't matter, but if I ever do try to include it, this needs to be fixed.
     public override PointOfReference SeenFromRest(Event e)
     {
         var seen0 = path.SeenFromRest(pathTransform.Inverse() * e);
         if (seen0 == null)
             return null;
         else
-            return pathTransform * seen0 * spriteTransform.Inverse();
+            return pathTransform * seen0;
+        //return pathTransform * seen0 * PointOfReference.FromRotation(-(initialRotation + time * rotationSpeed));
     }
 
     public override Event See(Event e)
@@ -51,7 +53,7 @@ public partial class Transform : Path
 
     public override Event ToLocalSpacetime(Event e)
     {
-        return spriteTransform * path.ToLocalSpacetime(pathTransform.Inverse() * e);
+        return PointOfReference.FromRotation(rotation) * path.ToLocalSpacetime(pathTransform.Inverse() * e);
     }
 
     public override Velocity GetVelocity(Event e)

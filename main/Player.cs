@@ -13,13 +13,13 @@ public partial class Player : Node2D
     {
         por = PointOfReference.IDENTITY;
         // Spawn entities here. At least until I add in scripting.
-        var enemy = SpawnEntity();
-        enemy.AddAcceleration(0.1f, -(float)Math.PI, 0.5f);
-        enemy.AddAcceleration(0.1f, -0.5f * (float)Math.PI, 0.5f);
+        var enemy = SpawnEntity(0.25f, 1f);
+        enemy.AddAcceleration(0.0f, -(float)Math.PI, 0.5f);
+        enemy.AddAcceleration(0.0f, -0.5f * (float)Math.PI, 0.5f);
         for (int i = 0; i < 20; ++i)
         {
-            enemy.AddAcceleration(0.1f, i * 0.5f * (float)Math.PI, 0.5f);
-            //enemy.AddAcceleration(0.1f, 0, 0.2f);
+            //enemy.AddAcceleration(0.1f, i * 0.5f * (float)Math.PI, 1f);
+            enemy.AddAcceleration(0.0f, 0, 0.5f);
         }
 
         /*Sprite2D sprite = GetNode<Sprite2D>("Sprite2D");
@@ -33,7 +33,7 @@ public partial class Player : Node2D
     {
         var accel = 0.1f;
         var t = 0.3f;
-        var enemy = SpawnEntity(0.25f);
+        var enemy = SpawnEntity(0.25f, 1f);
         enemy.AddAcceleration(accel * 2, -(float)Math.PI, t);
         enemy.AddAcceleration(accel / 2, -(float)Math.PI / 2, t);
         for (int i = 0; i < 20; ++i)
@@ -42,7 +42,7 @@ public partial class Player : Node2D
         var golden_angle = (3 - Mathf.Sqrt(5)) * (float)Math.PI;
         var radians = 0f;
         for (int i = 0; i < 1000; ++i) {
-            var bullet = SpawnEntity(0.01f);
+            var bullet = SpawnEntity(0.01f, 1f);
             bullet.AddAcceleration(accel, radians, 10);
             radians = (radians + golden_angle) % (2*(float)Math.PI);
         }
@@ -50,7 +50,7 @@ public partial class Player : Node2D
     
 	public override void _Process(double delta)
     {
-        GD.Print($"FPS: {1 / delta}");
+        //GD.Print($"FPS: {1 / delta}");
         float deltaF = (float)delta;
         //var viewportSize = GetViewportRect().Size;
         //Position = viewportSize / 2;
@@ -80,14 +80,14 @@ public partial class Player : Node2D
         }
     }
 
-    private Entity SpawnEntity(float size) {
+    private Entity SpawnEntity(float size, float rotationSpeed) {
         Entity entity = (Entity) EntityScene.Instantiate();
-        entity.Initialize(this, size);
+        entity.Initialize(this, size, rotationSpeed);
         AddChild(entity);
         return entity;
     }
 
     private Entity SpawnEntity() {
-        return SpawnEntity(0.1f);
+        return SpawnEntity(0.1f, 1f);
     }
 }

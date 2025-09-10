@@ -6,14 +6,29 @@ uniform mat4 por_inverse;
 uniform vec2 observer_position;	// pixels
 uniform float scale;			// pixels per light second
 uniform float size;				// size of the sprite
+uniform float spin_speed;
 
 const int MAX_SEGMENTS = 64;
 uniform int segment_count;
 uniform vec4 coevents[MAX_SEGMENTS];
 uniform mat4 path_transform[MAX_SEGMENTS];
 uniform mat4 path_transform_inverse[MAX_SEGMENTS];
-uniform mat4 sprite_transform[MAX_SEGMENTS];
+uniform float rads[MAX_SEGMENTS];
 uniform float accels[MAX_SEGMENTS];
+
+//to_local_spacetime() needs to return both the event (representing where it was seen) and a point of reference (in order to properly calculate redshift/blueshift if it's rotating).
+struct EventAndPOR {
+	vec4 event;
+	mat3 pointOfReference;
+};
+
+mat3 to_mat3(mat4 m) {
+	return mat3(
+	    m[0].xyz,
+	    m[1].xyz,
+	    m[2].xyz
+	);
+}
 
 //relativity functions
 mat4 event_to_translation(vec4 event) {
@@ -39,8 +54,8 @@ vec4 get_velocity_at_rest(vec4 event) {
 	return vec4(0,0,1,0);
 }
 
-vec4 to_local_spacetime_rest(vec4 event) {
-	return event;
+EventAndPOR to_local_spacetime_rest(vec4 event) {
+	return EventAndPOR(event, mat3(1.0));
 }
 //==Hyperbola
 vec4 get_velocity_at_hyperbola(vec4 e) {
@@ -57,7 +72,7 @@ vec4 get_velocity_at_hyperbola(vec4 e) {
 }
 
 //This one repeats a lot of get_velocity_at(). I should probably find a way to merge them.
-vec4 to_local_spacetime_hyperbola(vec4 e, float accel) {
+EventAndPOR to_local_spacetime_hyperbola(vec4 e, float accel) {
 	if(e.y <= 0.0) {
 		discard;
 	}
@@ -67,8 +82,10 @@ vec4 to_local_spacetime_hyperbola(vec4 e, float accel) {
 	}
 	float gamma = 1.0/sqrt(1.0-speed*speed);
 	vec4 v = vec4(0, -gamma*speed, gamma, 0);
-	vec4 lateral = event_to_translation(vec4(0, -1.0/accel, 0, 1)) * (velocity_to_lorentz(v) * e);
-	return vec4(lateral.xy, atanh(speed)/accel, 1);
+	mat4 lorentz = velocity_to_lorentz(v);
+	vec4 lateral = event_to_translation(vec4(0, -1.0/accel, 0, 1)) * (lorentz * e);
+	vec4 position = vec4(lateral.xy, atanh(speed)/accel, 1);
+	return EventAndPOR(position, to_mat3(lorentz));
 }
 //==Compound
 //TODO: What if it's a Rest?
@@ -79,11 +96,48 @@ vec4 get_velocity_at(int i, vec4 event) {
 		return path_transform[i]*get_velocity_at_hyperbola(path_transform_inverse[i]*event);
 }
 
-vec4 to_local_spacetime(int i, vec4 event) {
+EventAndPOR to_local_spacetime(int i, vec4 event) {
 	if(accels[i] == 0.0)
-		return sprite_transform[i]*to_local_spacetime_rest(path_transform_inverse[i]*event);
+		return to_local_spacetime_rest(path_transform_inverse[i]*event);
 	else
-		return sprite_transform[i]*to_local_spacetime_hyperbola(path_transform_inverse[i]*event, accels[i]);
+		return to_local_spacetime_hyperbola(path_transform_inverse[i]*event, accels[i]);
+}
+
+vec4 rotate_position(int component, vec4 event) {
+	float total_rads = rads[component] - event.z * spin_speed;
+	float s = sin(total_rads);
+	float c = cos(total_rads);
+
+	mat2 rot = mat2(vec2(c, -s),
+	                vec2(s,  c));
+	event.xy = rot * event.xy;
+	return event;
+}
+
+/*
+var k = 1/(t+1);
+new Vector4(1+k*x*x,	k*x*y,		x,	0),
+new Vector4(k*x*y,		1+k*y*y,	y,	0),
+new Vector4(x,			y,			t,	0),
+new Vector4(0,			0,			0,	1)
+*/
+
+vec4 add_velocity(vec4 v1, vec4 v2) {
+	float k = 1.0/(v1.z + 1.0);
+	mat3 loretz = mat3(
+		vec3(1.0+k*v1.x*v1.x, k*v1.x*v1.y, v1.x),
+		vec3(k*v1.x*v1.y, 1.0+k*v1.y*v1.y, v1.y),
+		v1.xyz
+	);
+	return vec4(loretz * v2.xyz, 0);
+}
+
+vec4 get_rotational_velocity(vec4 event) {
+	vec2 spun = spin_speed * vec2(event.y, -event.x);
+	float gamma2 = 1.0 - dot(spun, spun);
+	if(gamma2 < 0.0)
+		discard;
+	return vec4(spun, sqrt(gamma2), 0);
 }
 
 //TODO: I'm sure the binary search could be made more efficient.
@@ -119,16 +173,15 @@ int get_component(vec4 event) {
 }
 //drawing functions
 void check_if_there(vec4 e2) {
-	if(e2.x*e2.x + e2.y*e2.y > size*size)
-		discard;
-	//if(e2.x < -size || e2.x > size || e2.y < -size || e2.y > size)
+	//if(e2.x*e2.x + e2.y*e2.y > size*size)
 	//	discard;
-}
-
-float get_doppler(vec4 e, vec4 v) {
+	e2 *= sqrt(2);
+	if(e2.x < -size || e2.x > size || e2.y < -size || e2.y > size)
+		discard;
+}float get_doppler(vec4 e, vec4 v) {
 	//if(e.xy == vec2(0,0))
 	//	return 1.0;
-	return 1.0/(v.z*(1.0+(v.x*e.x+v.y*e.y)/sqrt(e.x*e.x+e.y*e.y)));
+	return v.z*(1.0-(v.x*e.x+v.y*e.y)/sqrt(e.x*e.x+e.y*e.y));
 }
 
 float fade(float t) {
@@ -139,6 +192,12 @@ float fade(float t) {
 }
 
 vec4 get_color(float ratio) {
+	//DEBUG: I'm making it just show red if there's redshift and blue if there's blueshift.
+	//It seems to be blushifting when spinning around the player, even though it should be redshifting.
+	/*if(ratio < 1.0)
+		return vec4(1.0,0.0,0.0,1.0);
+	else
+		return vec4(0.0,0.0,1.0,1.0);*/
 	float original_wavelength = sqrt(2.0);
 	float original_intensity = 1.0;
 
@@ -184,14 +243,22 @@ vec4 draw(vec2 screen_pos) {
 	//return int_to_color(component);
 
 	// === e2: convert bar to object's (non-inertial) frame ===
-	vec4 e2 = to_local_spacetime(component, bar);
+	// For a hyperbola, e2.event.z is always 0.
+	EventAndPOR e2 = to_local_spacetime(component, bar);
+
+	vec4 e3 = rotate_position(component, e2.event);
 
 	// Figure out if it even needs to draw that pixel
-	check_if_there(e2);
+	check_if_there(e3);
 	//return(int_to_color(component));
 
 	// === baz: Velocity at that event ===
-	vec4 baz = get_velocity_at(component, bar);
+	//vec4 baz = get_velocity_at(component, bar);
+
+	// Add in velocity from rotation.
+	// DEBUG: The redshift/blueshift is rotating with the object.
+	// I need to find the velocity, then convert it back from local_spacetime.
+	vec4 baz = path_transform[component] * vec4(e2.pointOfReference * get_rotational_velocity(e2.event).xyz, 0);
 
 	// === quux: Transform velocity to observer frame ===
 	vec4 quux = por_inverse * baz;

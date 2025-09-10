@@ -11,9 +11,10 @@ public partial class Compound : Path
 	private List<Vector4> coevents;
 	private List<PointOfReference> endPORs;
 	private ShaderMaterial shader;
+	private float rotationSpeed;
 	public bool dead;
 
-	public Compound(ShaderMaterial shader, PointOfReference start)
+	public Compound(ShaderMaterial shader, PointOfReference start, float rotationSpeed)
 	{
 		this.shader = shader;
 		components = [];
@@ -22,9 +23,10 @@ public partial class Compound : Path
 		events = [start.GetEvent()];
 		coevents = [GetCoevent(start)];
 		dead = false;
+		this.rotationSpeed = rotationSpeed;
 	}
 
-	public Compound(ShaderMaterial shader) : this(shader, PointOfReference.IDENTITY) { }
+	public Compound(ShaderMaterial shader, float rotationSpeed) : this(shader, PointOfReference.IDENTITY, rotationSpeed) { }
 
 	//TODO: This probably has some off by one errors.
 	//And really, it should be looking for just the visible components.
@@ -34,19 +36,20 @@ public partial class Compound : Path
 		shader.SetShaderParameter("coevents", coevents.ToArray());
 		var pathTransforms = new float[components.Count * 16];
 		var pathTransformInverses = new float[components.Count * 16];
-		var spriteTransforms = new float[components.Count * 16];
+		var rotations = new float[components.Count];
 		var accels = new float[components.Count];
 		for (int i = 0; i < components.Count; ++i)
 		{
 			var component = components[i];
 			component.pathTransform.PackXform(pathTransforms, i);
 			component.pathTransform.PackInverse(pathTransformInverses, i);
-			component.spriteTransform.PackXform(spriteTransforms, i);
+			//This seems like it should work, but doesn't. Putting a - in there seems to make the spinning match up, but messes up the doppler effect. And only works if the time is constant. There seems to be an off by one error, but I don't think it can be fixed without adding in another element of times, which makes everything else complicated, so I'm saving this first.
+			rotations[i] = times[i] * rotationSpeed;
 			accels[i] = component.GetAccel();
 		}
 		shader.SetShaderParameter("path_transform", pathTransforms);
 		shader.SetShaderParameter("path_transform_inverse", pathTransformInverses);
-		shader.SetShaderParameter("sprite_transform", spriteTransforms);
+		shader.SetShaderParameter("rads", rotations);
 		shader.SetShaderParameter("accels", accels);
 		//DumpShaderParams(shader);
 	}
@@ -230,7 +233,7 @@ public partial class Compound : Path
 			translate = new Event(0, -1 / accel, 0).GetTranslation();
 		}
 		var rotate = PointOfReference.FromRotation(radians);
-		var transform = new Transform(path, endPORs[^1] * rotate * translate, rotate);
+		var transform = new Transform(path, endPORs[^1] * rotate * translate, radians);
 		PointOfReference end = transform.PointOfReferenceAtTime(time);
 		components.Add(transform);
 		times.Add(time + (times.Count > 0 ? times[^1] : 0));
