@@ -14,12 +14,12 @@ public partial class Player : Node2D
         por = PointOfReference.IDENTITY;
         // Spawn entities here. At least until I add in scripting.
         var enemy = SpawnEntity(0.25f, 1f);
-        enemy.AddAcceleration(0.0f, -(float)Math.PI, 0.5f);
-        enemy.AddAcceleration(0.0f, -0.5f * (float)Math.PI, 0.5f);
+        enemy.AddAcceleration(0.1f, -(float)Math.PI, 0.5f);
+        enemy.AddAcceleration(0.1f, -0.5f * (float)Math.PI, 0.5f);
         for (int i = 0; i < 20; ++i)
         {
-            //enemy.AddAcceleration(0.1f, i * 0.5f * (float)Math.PI, 1f);
-            enemy.AddAcceleration(0.0f, 0, 0.5f);
+            enemy.AddAcceleration(0.1f, i * 0.5f * (float)Math.PI, 1f);
+            //enemy.AddAcceleration(0.0f, 0, 0.5f);
         }
 
         /*Sprite2D sprite = GetNode<Sprite2D>("Sprite2D");

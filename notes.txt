@@ -1,13 +1,9 @@
 Doing:
 
-I'm working on spinning. It's almost right, but it seems to jump just slightly every time.
-I was having trouble with the doppler effect. I think I had it wrong before but just didn't notice. Hopefully now it's right.
-It seems to work fine with Rest, but have problems with Hyperbola. This is in the actual motion and not just the shader. I think I'm changing the direction of acceleration based on the angle it's currently spun at.
-
 TODO:
 
-Version control
+Collisions
 Sprites
-Make it so enemies can spin
+Make it so enemies can have multiple overlapping sprites spinning at different rates
 Separate compound_shader into shader include files
 Add in scripting language

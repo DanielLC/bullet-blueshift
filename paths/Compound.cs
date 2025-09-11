@@ -19,7 +19,7 @@ public partial class Compound : Path
 		this.shader = shader;
 		components = [];
 		endPORs = [start];
-		times = [];
+		times = [0];
 		events = [start.GetEvent()];
 		coevents = [GetCoevent(start)];
 		dead = false;
@@ -43,7 +43,6 @@ public partial class Compound : Path
 			var component = components[i];
 			component.pathTransform.PackXform(pathTransforms, i);
 			component.pathTransform.PackInverse(pathTransformInverses, i);
-			//This seems like it should work, but doesn't. Putting a - in there seems to make the spinning match up, but messes up the doppler effect. And only works if the time is constant. There seems to be an off by one error, but I don't think it can be fixed without adding in another element of times, which makes everything else complicated, so I'm saving this first.
 			rotations[i] = times[i] * rotationSpeed;
 			accels[i] = component.GetAccel();
 		}
@@ -73,11 +72,11 @@ public partial class Compound : Path
 			//It's before the object existed
 			return -1;
 		}
-		for (int i = 1; i < times.Count; ++i)
+		for (int i = 0; i < times.Count; ++i)
 		{
 			if (s < times[i])
 			{
-				return i;
+				return i+1;
 			}
 		}
 		//It's after the object disappeared
@@ -87,14 +86,14 @@ public partial class Compound : Path
 	{
 		if (i < 0)
 			return null;
-		return components[i].PointOfReferenceAtTime(s - times[i - 1]);
+		return components[i].PointOfReferenceAtTime(s - times[i]);
 	}
 
 	public Event Event(float s, int i)
 	{
 		if (i < 0)
 			return null;
-		return components[i].Event(s - times[i - 1]);
+		return components[i].Event(s - times[i]);
 	}
 
 	public override PointOfReference PointOfReferenceAtTime(float s)
@@ -202,7 +201,7 @@ public partial class Compound : Path
 		if (i < 0)
 			return null;
 		Event lateral = components[i - 1].ToLocalSpacetime(e);
-		return new Event(lateral.x, lateral.y, lateral.t + times[i]);
+		return new Event(lateral.x, lateral.y, lateral.t + times[i - 1]);
 	}
 
 	public override Velocity GetVelocity(Event e)
@@ -236,7 +235,7 @@ public partial class Compound : Path
 		var transform = new Transform(path, endPORs[^1] * rotate * translate, radians);
 		PointOfReference end = transform.PointOfReferenceAtTime(time);
 		components.Add(transform);
-		times.Add(time + (times.Count > 0 ? times[^1] : 0));
+		times.Add(time + times[^1]);
 		events.Add(end.GetEvent());
 		coevents.Add(GetCoevent(end));
 		endPORs.Add(end);

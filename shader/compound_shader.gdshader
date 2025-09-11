@@ -19,7 +19,7 @@ uniform float accels[MAX_SEGMENTS];
 //to_local_spacetime() needs to return both the event (representing where it was seen) and a point of reference (in order to properly calculate redshift/blueshift if it's rotating).
 struct EventAndPOR {
 	vec4 event;
-	mat3 pointOfReference;
+	mat3 pointOfReferenceInverse;
 };
 
 mat3 to_mat3(mat4 m) {
@@ -85,7 +85,12 @@ EventAndPOR to_local_spacetime_hyperbola(vec4 e, float accel) {
 	mat4 lorentz = velocity_to_lorentz(v);
 	vec4 lateral = event_to_translation(vec4(0, -1.0/accel, 0, 1)) * (lorentz * e);
 	vec4 position = vec4(lateral.xy, atanh(speed)/accel, 1);
-	return EventAndPOR(position, to_mat3(lorentz));
+	mat3 inv_lorentz = mat3(
+		vec3(lorentz[0].x, -lorentz[0].y, -lorentz[0].z),
+		vec3(-lorentz[1].x, lorentz[1].y, -lorentz[1].z),
+		vec3(-lorentz[2].x, -lorentz[2].y, lorentz[2].z)
+	);
+	return EventAndPOR(position, inv_lorentz);
 }
 //==Compound
 //TODO: What if it's a Rest?
@@ -104,12 +109,12 @@ EventAndPOR to_local_spacetime(int i, vec4 event) {
 }
 
 vec4 rotate_position(int component, vec4 event) {
-	float total_rads = rads[component] - event.z * spin_speed;
+	float total_rads = rads[component] + event.z * spin_speed;
 	float s = sin(total_rads);
 	float c = cos(total_rads);
 
-	mat2 rot = mat2(vec2(c, -s),
-	                vec2(s,  c));
+	mat2 rot = mat2(vec2(c, s),
+	                vec2(-s,  c));
 	event.xy = rot * event.xy;
 	return event;
 }
@@ -258,7 +263,8 @@ vec4 draw(vec2 screen_pos) {
 	// Add in velocity from rotation.
 	// DEBUG: The redshift/blueshift is rotating with the object.
 	// I need to find the velocity, then convert it back from local_spacetime.
-	vec4 baz = path_transform[component] * vec4(e2.pointOfReference * get_rotational_velocity(e2.event).xyz, 0);
+	// That's supposed to be e2.pointOfReference.inverse, isn't it?
+	vec4 baz = path_transform[component] * vec4(e2.pointOfReferenceInverse * get_rotational_velocity(e2.event).xyz, 0);
 
 	// === quux: Transform velocity to observer frame ===
 	vec4 quux = por_inverse * baz;
