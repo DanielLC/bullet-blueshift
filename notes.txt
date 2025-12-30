@@ -1,5 +1,12 @@
 Doing:
 
+Working on the scripting language.
+I'll need to use Expression for the math expressions in the code. I pass in a string[] of all the variables when it parses it, then I need to pass in the variables in the same order when it executes.
+I'd use a dictionary to track the variables as I'm writing the code. As for the Elements themselves, I suppose they'd each have a string[] for their variables, but it's not unique. They'd share it with any other elements of the same scope.
+
+NullElement is just used for the player. I think it would be better just to have it be a Branch.
+I should also have it so you can't add children like Accelerate to a Branch.
+
 TODO:
 
 Collisions

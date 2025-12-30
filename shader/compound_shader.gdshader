@@ -145,10 +145,8 @@ vec4 get_rotational_velocity(vec4 event) {
 	return vec4(spun, sqrt(gamma2), 0);
 }
 
-//TODO: I'm sure the binary search could be made more efficient.
 int get_component(vec4 event) {
-
-	//I'm adding this version for debugging purposes.
+	//This version was for debugging. It's a simpler linear search.
 	//for(int i=0; i<segment_count; ++i) {
         //if (dot(coevents[i], event) < 0.0) {
 			//if(i<1)
@@ -158,6 +156,7 @@ int get_component(vec4 event) {
 	//}
 	//return segment_count-1;
 
+	//Binary search
     int left = -1;
     int right = segment_count;
     int mid = 0;

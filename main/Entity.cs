@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.Drawing;
 
 public partial class Entity : Node2D
 {
@@ -7,6 +8,11 @@ public partial class Entity : Node2D
 	private Player player;
 	private ShaderMaterial shader;
 	private float size;
+
+	public PointOfReference PointOfReferenceAtTime(float s)
+    {
+        return path.PointOfReferenceAtTime(s);
+    }
 
 	public void Initialize(Player player, float size, PointOfReference pointOfReference, float rotationSpeed)
 	{
@@ -85,24 +91,24 @@ public partial class Entity : Node2D
 		return (1 - Mathf.Cos(t * (float)Math.PI)) / 2;
 	}
 
-	public Color GetColor(float ratio)
-	{
-		float originalWavelength = Mathf.Sqrt(2);
-		float originalIntensity = 1;
-		float[] rgb = { 0f, 0f, 0f };
-		var shiftedWavelength = Mathf.Log(originalWavelength * ratio) / Mathf.Log(2) * 5 - 1;
-		var shiftedIntensity = originalIntensity; //I should probably divide by ratio
-		var lower = Mathf.FloorToInt(shiftedWavelength);
-		var higher = lower + 1;
-		float t = shiftedWavelength - lower;
-		if (0 <= lower && lower < 3)
-			rgb[lower] = Interpolate(1 - t) * shiftedIntensity;
-		if (0 <= higher && higher < 3)
-			rgb[higher] = Interpolate(t) * shiftedIntensity;
-		else if (higher == 3)
-			rgb[0] = Interpolate(2 * t) * shiftedIntensity / 2;
-		return new Color(rgb[0], rgb[1], rgb[2]);
-	}
+	// public Color GetColor(float ratio)
+	// {
+	// 	float originalWavelength = Mathf.Sqrt(2);
+	// 	float originalIntensity = 1;
+	// 	float[] rgb = { 0f, 0f, 0f };
+	// 	var shiftedWavelength = Mathf.Log(originalWavelength * ratio) / Mathf.Log(2) * 5 - 1;
+	// 	var shiftedIntensity = originalIntensity; //I should probably divide by ratio
+	// 	var lower = Mathf.FloorToInt(shiftedWavelength);
+	// 	var higher = lower + 1;
+	// 	float t = shiftedWavelength - lower;
+	// 	if (0 <= lower && lower < 3)
+	// 		rgb[lower] = Interpolate(1 - t) * shiftedIntensity;
+	// 	if (0 <= higher && higher < 3)
+	// 		rgb[higher] = Interpolate(t) * shiftedIntensity;
+	// 	else if (higher == 3)
+	// 		rgb[0] = Interpolate(2 * t) * shiftedIntensity / 2;
+	// 	return new Color(rgb[0], rgb[1], rgb[2]);
+	// }
 
 	public void AddAcceleration(float accel, float radians, float time)
 	{

@@ -32,6 +32,10 @@ public partial class Compound : Path
 	//And really, it should be looking for just the visible components.
 	public void UpdateShader()
 	{
+		if(components.Count >= 64)
+        {
+			throw new Exception("Too many components for shader. Fix it so it's not trying to show all these components at once.");
+        }
 		shader.SetShaderParameter("segment_count", components.Count + 1);
 		shader.SetShaderParameter("coevents", coevents.ToArray());
 		var pathTransforms = new float[components.Count * 16];
@@ -72,11 +76,11 @@ public partial class Compound : Path
 			//It's before the object existed
 			return -1;
 		}
-		for (int i = 0; i < times.Count; ++i)
+		for (int i = 1; i < times.Count; ++i)
 		{
 			if (s < times[i])
 			{
-				return i+1;
+				return i-1;
 			}
 		}
 		//It's after the object disappeared
@@ -84,7 +88,7 @@ public partial class Compound : Path
 	}
 	public PointOfReference PointOfReferenceAtTime(float s, int i)
 	{
-		if (i < 0)
+		if (i < 0 || i >= components.Count)
 			return null;
 		return components[i].PointOfReferenceAtTime(s - times[i]);
 	}

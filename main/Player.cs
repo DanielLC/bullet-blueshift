@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.Diagnostics;
 
 public partial class Player : Node2D
 {
@@ -12,21 +13,33 @@ public partial class Player : Node2D
     public Player()
     {
         por = PointOfReference.IDENTITY;
-        // Spawn entities here. At least until I add in scripting.
-        var enemy = SpawnEntity(0.25f, 1f);
-        enemy.AddAcceleration(0.1f, -(float)Math.PI, 0.5f);
-        enemy.AddAcceleration(0.1f, -0.5f * (float)Math.PI, 0.5f);
-        for (int i = 0; i < 20; ++i)
-        {
-            enemy.AddAcceleration(0.1f, i * 0.5f * (float)Math.PI, 1f);
-            //enemy.AddAcceleration(0.0f, 0, 0.5f);
-        }
-
         /*Sprite2D sprite = GetNode<Sprite2D>("Sprite2D");
         sprite.ZIndex = 1;
         sprite.Scale *= 0.001f;*/
 
+        BasicLevel();
         //Benchmark();
+        //TestLevel();
+    }
+
+    private void TestLevel()
+    {
+        var accel = 0.1f;
+        var t = 1f;
+        var enemy = SpawnEntity(0.25f, 1f);
+        enemy.AddAcceleration(accel / 2, -(float)Math.PI, t);
+        enemy.AddAcceleration(accel / 2, -(float)Math.PI / 2, t);
+        for (int i = 0; i < 20; ++i)
+            enemy.AddAcceleration(accel, i*0.5f*(float)Math.PI, t);
+
+        //Debug.WriteLine("Position: " + enemy.PointOfReferenceAtTime(5f).GetEvent());
+        //PointOfReference por = new PointOfReference(new Event(0.2f, 0, 2), new Velocity(0, 0.2f));
+        //PointOfReference por = enemy.PointOfReferenceAtTime(2f).GetEvent().GetTranslation();
+        for (var i = 0; i < 100; ++i) {
+            //Debug.WriteLine(enemy.PointOfReferenceAtTime(0.1f*i));
+            var bullet = SpawnEntity(0.01f, 1f, enemy.PointOfReferenceAtTime(0.1f*i).GetEvent().GetTranslation());
+            bullet.AddAcceleration(0, 0, 10);
+        }
     }
 
     private void Benchmark()
@@ -34,10 +47,10 @@ public partial class Player : Node2D
         var accel = 0.1f;
         var t = 0.3f;
         var enemy = SpawnEntity(0.25f, 1f);
-        enemy.AddAcceleration(accel * 2, -(float)Math.PI, t);
+        enemy.AddAcceleration(accel / 2, -(float)Math.PI, t);
         enemy.AddAcceleration(accel / 2, -(float)Math.PI / 2, t);
         for (int i = 0; i < 20; ++i)
-            enemy.AddAcceleration(accel, i/2*(float)Math.PI, t);
+            enemy.AddAcceleration(accel, i*0.5f*(float)Math.PI, t);
 
         var golden_angle = (3 - Mathf.Sqrt(5)) * (float)Math.PI;
         var radians = 0f;
@@ -45,6 +58,27 @@ public partial class Player : Node2D
             var bullet = SpawnEntity(0.01f, 1f);
             bullet.AddAcceleration(accel, radians, 10);
             radians = (radians + golden_angle) % (2*(float)Math.PI);
+        }
+    }
+
+    private void BasicLevel()
+    {
+        var accel = 0.1f;
+        var t = 1f;
+        var enemy = SpawnEntity(0.25f, 1f);
+        enemy.AddAcceleration(accel / 2, -(float)Math.PI, t);
+        enemy.AddAcceleration(accel / 2, -(float)Math.PI / 2, t);
+        for (int i = 0; i < 20; ++i)
+            enemy.AddAcceleration(accel, i*0.5f*(float)Math.PI, t);
+
+        var angle_delta_delta = 0.1f;
+        var angle_delta = 0f;
+        var cur_angle = 0f;
+        for (int i = 0; i < 100; ++i) {
+            var bullet = SpawnEntity(0.01f, 1f, enemy.PointOfReferenceAtTime(i*0.1f));
+            bullet.AddAcceleration(accel, cur_angle, 10);
+            cur_angle = (cur_angle + angle_delta) % (2*(float)Math.PI);
+            angle_delta = (angle_delta + angle_delta_delta) % (2*(float)Math.PI);
         }
     }
     
@@ -80,14 +114,18 @@ public partial class Player : Node2D
         }
     }
 
-    private Entity SpawnEntity(float size, float rotationSpeed) {
+    private Entity SpawnEntity(float size, float rotationSpeed, PointOfReference pointOfReference) {
         Entity entity = (Entity) EntityScene.Instantiate();
-        entity.Initialize(this, size, rotationSpeed);
+        entity.Initialize(this, size, pointOfReference, rotationSpeed);
         AddChild(entity);
         return entity;
     }
 
+    private Entity SpawnEntity(float size, float rotationSpeed) {
+        return SpawnEntity(0.1f, 1f, PointOfReference.IDENTITY);
+    }
+
     private Entity SpawnEntity() {
-        return SpawnEntity(0.1f, 1f);
+        return SpawnEntity(0.1f, 1f, PointOfReference.IDENTITY);
     }
 }
