@@ -1,3 +1,7 @@
+Bugs:
+
+When I accelerate in different directions, the sprite suddenly turns with it. I never noticed because my sprite was a square and I was rotating 90 degrees.
+
 Doing:
 
 Working on the scripting language.

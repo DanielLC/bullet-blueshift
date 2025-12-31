@@ -13,13 +13,17 @@ public partial class Player : Node2D
     public Player()
     {
         por = PointOfReference.IDENTITY;
-        /*Sprite2D sprite = GetNode<Sprite2D>("Sprite2D");
-        sprite.ZIndex = 1;
-        sprite.Scale *= 0.001f;*/
 
         BasicLevel();
         //Benchmark();
         //TestLevel();
+    }
+
+    public override void _Ready()
+    {
+        Sprite2D sprite = GetNode<Sprite2D>("Sprite2D");
+        //sprite.ZIndex = 1;
+        sprite.Scale /= 128;
     }
 
     private void TestLevel()
@@ -65,11 +69,11 @@ public partial class Player : Node2D
     {
         var accel = 0.1f;
         var t = 1f;
-        var enemy = SpawnEntity(0.25f, 1f);
+        var enemy = SpawnEntity(0.15f, 1f, new Event(0, -0.3f, -0.1f).GetTranslation());
         enemy.AddAcceleration(accel / 2, -(float)Math.PI, t);
         enemy.AddAcceleration(accel / 2, -(float)Math.PI / 2, t);
         for (int i = 0; i < 20; ++i)
-            enemy.AddAcceleration(accel, i*0.5f*(float)Math.PI, t);
+            enemy.AddAcceleration(accel, i*0.25f*(float)Math.PI, t);
 
         var angle_delta_delta = 0.1f;
         var angle_delta = 0f;

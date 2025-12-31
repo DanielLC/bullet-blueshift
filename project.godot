@@ -24,6 +24,11 @@ window/size/viewport_height=768
 
 project/assembly_name="RelativisticDanmakuMono"
 
+[editor]
+
+movie_writer/mjpeg_quality=0.9
+movie_writer/movie_file="C:/Users/daniel/Documents/relativisticdanmakumono/output.avi"
+
 [rendering]
 
 renderer/rendering_method="gl_compatibility"

@@ -7,6 +7,7 @@ uniform vec2 observer_position;	// pixels
 uniform float scale;			// pixels per light second
 uniform float size;				// size of the sprite
 uniform float spin_speed;
+uniform sampler2D texture_sampler : source_color;
 
 const int MAX_SEGMENTS = 64;
 uniform int segment_count;
@@ -175,13 +176,19 @@ int get_component(vec4 event) {
 		discard;
 	return left;
 }
+
 //drawing functions
-void check_if_there(vec4 e2) {
+//Originally this just returned if it's there, but I need to have it return brightness.
+float check_if_there(vec4 e2) {
 	//if(e2.x*e2.x + e2.y*e2.y > size*size)
 	//	discard;
 	e2 *= sqrt(2);
 	if(e2.x < -size || e2.x > size || e2.y < -size || e2.y > size)
 		discard;
+	vec4 color = texture(texture_sampler, e2.xy/(2.0*size) + vec2(0.5,0.5));
+	if(color.x == 0.0 || color.w == 0.0)
+		discard;
+	return color.x;
 }
 
 float get_doppler(vec4 e, vec4 v) {
@@ -197,14 +204,14 @@ float fade(float t) {
 	return sin(PI*t*.5);
 }
 
-vec4 get_color(float ratio) {
+vec3 get_color(float ratio) {
 	float original_wavelength = sqrt(2.0);
 	float original_intensity = 1.0;
 
 	float shifted_wavelength = log2(original_wavelength * ratio) * 5.0 - 1.0;
 	float shifted_intensity = original_intensity; // divide by ratio if you want intensity shift
 
-	vec4 rgb = vec4(0.0,0.0,0.0,1.0);
+	vec3 rgb = vec3(0.0,0.0,0.0);
 	float lower = floor(shifted_wavelength);
 	float higher = lower + 1.0;
 	float t = shifted_wavelength - lower;
@@ -249,7 +256,7 @@ vec4 draw(vec2 screen_pos) {
 	vec4 e3 = rotate_position(component, e2.event);
 
 	// Figure out if it even needs to draw that pixel
-	check_if_there(e3);
+	float brightness = check_if_there(e3);
 	//return(int_to_color(component));
 
 	// === baz: Velocity at that event ===
@@ -268,19 +275,18 @@ vec4 draw(vec2 screen_pos) {
 	float doppler = get_doppler(foo, quux);
 
 	// === color based on doppler shift ===
-	vec4 color = get_color(doppler);
+	vec4 color = vec4(get_color(doppler) * brightness, 1.0);
 
 	return color;
 }
 
 void fragment() {
-	COLOR = draw(SCREEN_UV);
 	//Draw the outline (for debugging purposes)
-	/*if(UV.x < 0.01 || UV.x > 0.99 || UV.y < 0.01 || UV.y > 0.99) {
-		COLOR = vec4(0,0,1,1);
+	if(UV.x < 0.01 || UV.x > 0.99 || UV.y < 0.01 || UV.y > 0.99) {
+		COLOR = vec4(0,1,0,1);
 	} else {
 		//COLOR = path_transform[0][3];
 		//COLOR.a = 1.0;
 		COLOR = draw(SCREEN_UV);
-	}*/
+	}
 }

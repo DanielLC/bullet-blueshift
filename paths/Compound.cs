@@ -47,7 +47,7 @@ public partial class Compound : Path
 			var component = components[i];
 			component.pathTransform.PackXform(pathTransforms, i);
 			component.pathTransform.PackInverse(pathTransformInverses, i);
-			rotations[i] = times[i] * rotationSpeed;
+			rotations[i] = times[i] * rotationSpeed + component.rotation;
 			accels[i] = component.GetAccel();
 		}
 		shader.SetShaderParameter("path_transform", pathTransforms);
