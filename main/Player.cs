@@ -1,22 +1,24 @@
 using Godot;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 public partial class Player : Node2D
 {
-    public const float ACCELERATION = 0.3f;
+    public const float ACCELERATION = 0.5f;
+    public const float PLAYER_SIZE = 0.05f;
+    public const float PLAYER_ROTATION = 0f;
+    private List<Tuple<Event, ScriptVM>> events = [];
     //public const float SCALE = 1f;
 
     public PointOfReference por;
     private static readonly PackedScene EntityScene = (PackedScene) ResourceLoader.Load("res://main/Entity.tscn");
+    //private Entity entity;    //This was representing the player. The game is not ready for it and it's probably overkill.
+    private static Player instance;
 
     public Player()
     {
-        por = PointOfReference.IDENTITY;
-
-        BasicLevel();
-        //Benchmark();
-        //TestLevel();
+        instance = this;
     }
 
     public override void _Ready()
@@ -24,6 +26,22 @@ public partial class Player : Node2D
         Sprite2D sprite = GetNode<Sprite2D>("Sprite2D");
         //sprite.ZIndex = 1;
         sprite.Scale /= 128;
+
+        por = PointOfReference.IDENTITY;
+        //entity = SpawnEntity(PLAYER_SIZE, PLAYER_ROTATION);
+
+        ScriptedLevel();
+        //BasicLevel();
+        //Benchmark();
+        //TestLevel();
+    }
+
+    private void ScriptedLevel()
+    {
+        new ScriptCompiler().ParseFile("script.txt");
+        var enemy = SpawnEntity(0.1f, 0f, new Event(0, 0.2f, 0.3f).GetTranslation());
+        ScriptVM script = new ScriptVM(enemy);
+        events.Add(new Tuple<Event, ScriptVM>(script.Run(), script));
     }
 
     private void TestLevel()
@@ -95,6 +113,8 @@ public partial class Player : Node2D
         //Scale = Mathf.Min(viewportSize.X, viewportSize.Y) * SCALE * Vector2.One;
         var x = Input.GetActionStrength("ui_right") - Input.GetActionStrength("ui_left");
         var y = Input.GetActionStrength("ui_down") - Input.GetActionStrength("ui_up");
+        //entity.AddAcceleration(Mathf.Sqrt(x*x + y*y) * ACCELERATION, Mathf.Atan2(-x, y), deltaF);
+        //por = entity.GetEndPOR();
         var dir = new Vector2(x, y).Normalized() * deltaF * ACCELERATION;
         var v = Velocity.FromRapidity(dir.X, dir.Y);
         //por *= new PointOfReference(new Event(0, 0, deltaF), v);
@@ -109,6 +129,30 @@ public partial class Player : Node2D
         //por = por.Wait(delta)
         por.RecalculateInverse();   //I probably don't have to do this every time, but I'll do it for now.
 
+        var curEvent = por.GetEvent();
+        for(int i = 0; i < events.Count;)
+        {
+            // Even odds I flipped the comparison.
+            if(events[i].Item1 < curEvent)
+            {
+                var newEvent = events[i].Item2.Run();
+                if(newEvent == null)
+                {
+                    // If it's done, just move the last one here.
+                    events[i] = events[^1];
+                    events.RemoveAt(events.Count - 1);
+                } else
+                {
+                    // Otherwise, use the new position.
+                    events[i] = new Tuple<Event, ScriptVM>(newEvent, events[i].Item2);
+                }
+                continue;
+            }
+            // Only increment i if the event has not updated. Otherwise you'll need to check it again.
+            // And you'll need to check if i < events.Count, since that might have changed, which is why I'm continuing the for loop instead of using a while.
+            ++i;
+        }
+
         foreach (var child in GetChildren())
         {
             if (child is Entity entity)
@@ -118,15 +162,15 @@ public partial class Player : Node2D
         }
     }
 
-    private Entity SpawnEntity(float size, float rotationSpeed, PointOfReference pointOfReference) {
+    public static Entity SpawnEntity(float size, float rotationSpeed, PointOfReference pointOfReference) {
         Entity entity = (Entity) EntityScene.Instantiate();
-        entity.Initialize(this, size, pointOfReference, rotationSpeed);
-        AddChild(entity);
+        entity.Initialize(instance, size, pointOfReference, rotationSpeed);
+        instance.AddChild(entity);
         return entity;
     }
 
     private Entity SpawnEntity(float size, float rotationSpeed) {
-        return SpawnEntity(0.1f, 1f, PointOfReference.IDENTITY);
+        return SpawnEntity(size, rotationSpeed, PointOfReference.IDENTITY);
     }
 
     private Entity SpawnEntity() {

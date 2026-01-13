@@ -1,15 +1,28 @@
-Bugs:
-
-When I accelerate in different directions, the sprite suddenly turns with it. I never noticed because my sprite was a square and I was rotating 90 degrees.
-
 Doing:
 
 Working on the scripting language.
-I'll need to use Expression for the math expressions in the code. I pass in a string[] of all the variables when it parses it, then I need to pass in the variables in the same order when it executes.
-I'd use a dictionary to track the variables as I'm writing the code. As for the Elements themselves, I suppose they'd each have a string[] for their variables, but it's not unique. They'd share it with any other elements of the same scope.
-
-NullElement is just used for the player. I think it would be better just to have it be a Branch.
-I should also have it so you can't add children like Accelerate to a Branch.
+ScriptCompiler compiles the script into something like bytecode. Though the Instructions include Expressions.
+ScriptVM runs the script. One instance of it will exist for each Entity, so it can keep track of things like variables and the instruction pointer.
+Script contains the rules for how the script works, and the script itself. Basically, anything that makes just as much sense in ScriptCompiler vs ScriptVM.
+I'm planning on a BaseObject, which is used for Expression. It would have any and all functions that aren't built-in that the player is likely to need, like trig functions, random functions, and a few custom things that are specifically designed to be useful here. Like a function to tell what direction it would need to accelerate in to intersect with the player if they don't accelerate.
+Right now, the instruction includes JUMP and JUMP_IF which things like if and while get compiled into. And it has instructions for things like accelerate that control how the bullets work. But I'm considering making it so accelerate() is a function in the BaseObject
+Scratch that. Definitely make those functions in the base object, ScriptContext.
+Here's how this thing is going to work.
+1. Player runs ScriptCompiler, loading in a script.
+2. Player is hardcoded to control its own Entity, with its own Emitter. (Emitter to be added later)
+	i. An Emitter should probably have a base object that doesn't have functions like accelerate(), which ScriptOContext extends.
+3. Player's Emitter instantiates a ScriptVM, which Player runs at line 0.
+4. ScriptVM reads through the script one line at a time until it gets to something like accelerate(), at which point it returns an Event and radius to the Player.
+5. Every frame, the Player checks if that Event is approaching the past lightcone within the radius of the Entity.
+6. Once it is, Player runs that ScriptVM which remembers the instruction pointer.
+7. If the ScriptVM reaches a spawn() function, it instantiates a new Entity from the current location, tells it to run the next instruction, and itself runs some later instruction that's stored in the instruction list.
+	i. Or spawn command? It would need to include a jump somehow. Simplest would be JUMP_IF with spawn() as the condition, but should the player have to write `if(spawn()) {...}`?
+	ii. Maybe I could make if() use Expression too. How would that work?
+	`{` could be compiled using an instruction pointer to the matching `}`
+	But else can't be an Expression. I'd have to use else(). Though I suppose I could make if() an expression but else a command.
+8. Eventually, ScriptVM reaches the end of the script and despawns the Emitter or Entity.
+	i. An Entity despawning must also automatically despawn any Emitters. And also any Entities that spawned from it. And if it had spawned a bullet that destroyed something else... That shouldn't actually be possible because enemies can't hit each other and the player isn't going to be spawning anything in the future.
+I want to save Emitter for later, but there's not really a good way to have the player shoot bullets. So I guess I'll just have something spawn at the beginning and work from that.
 
 TODO:
 
@@ -18,3 +31,9 @@ Sprites
 Make it so enemies can have multiple overlapping sprites spinning at different rates
 Separate compound_shader into shader include files
 Add in scripting language
+
+Notes:
+
+I made it so the player is controlling an Entity, which lets you see relativistic effects on your own ship. But I don't think the game is ready for this. I have to make sure it properly removes parts of it in the past, and I shouldn't have it make a new one on every frame. Easy enough problem to fix on a PC, but not something analogue.
+
+Also, it is unnecessary. I will need to track the player's past somehow when I want enemies to shoot at where you were, but for drawing your sprite, unless it's huge the different sections where you moved differently aren't noticeable. Just keep it simple and draw it based on how you're currently accelerating.

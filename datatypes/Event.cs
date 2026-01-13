@@ -52,8 +52,18 @@ public class Event
         if (proper_distance_squared > 0) {
             return 0;
         } else {
-            return -Mathf.Sign(dt);
+            return Mathf.Sign(dt);
         }
+    }
+
+    public static bool operator >(Event left, Event right)
+    {
+        return left.Compare(right) > 0;
+    }
+
+    public static bool operator <(Event left, Event right)
+    {
+        return left.Compare(right) < 0;
     }
 
     public static float operator *(Event e, Vector4 coevent)

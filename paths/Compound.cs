@@ -151,7 +151,7 @@ public partial class Compound : Path
 		if (components.Count == 0)
 			return null;
 		//If the object hasn't been created yet, there's nothing to draw.
-		if (events[0].Compare(e) < 1)
+		if (events[0] > e)
 		{
 			// TODO: I should probably make this use a Rest if it's still close enough that part of it is visible.
 			return components[0].SeenFromRest(e);
@@ -163,7 +163,7 @@ public partial class Compound : Path
 		//Assuming I start erasing them if they're no longer visible. I suppose I should probably do that here?
 		for (int i = 1; i < components.Count; ++i)
 		{
-			if (events[i].Compare(e) < 1)
+			if (events[i] > e)
 			{
 				return components[i - 1].SeenFromRest(e);
 			}
@@ -175,10 +175,10 @@ public partial class Compound : Path
 	{
 		if (components.Count == 0)
 			return null;
-		if (events[0].Compare(e) < -1)
+		if (events[0] > e)
 			return null;
 		for (int i = 1; i < components.Count; ++i)
-			if (events[i].Compare(e) < 1)
+			if (events[i] > e)
 				return components[i - 1].See(e);
 		return components[^1].See(e);
 	}
@@ -221,7 +221,7 @@ public partial class Compound : Path
 		return new Vector4(m.inverse.X.Z, m.inverse.Y.Z, m.inverse.Z.Z, m.inverse.W.Z);
 	}
 
-	public void AddAcceleration(float accel, float radians, float time)
+	public Event AddAcceleration(float accel, float radians, float time)
 	{
 		Path path;
 		PointOfReference translate;
@@ -244,6 +244,7 @@ public partial class Compound : Path
 		coevents.Add(GetCoevent(end));
 		endPORs.Add(end);
 		UpdateShader();
+		return events[^1];
 	}
 
 	public void Extend(float time)
@@ -277,6 +278,15 @@ public partial class Compound : Path
 		dead = true;
 	}
 
+	public Event GetEnd()
+	{
+		return events[^1];
+	}
+
+	public PointOfReference GetEndPOR()
+	{
+		return endPORs[^1];
+	}
 	public override string ToString()
 	{
 		return "Compound";

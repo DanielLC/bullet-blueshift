@@ -7,7 +7,7 @@ public partial class Entity : Node2D
 	private Compound path;
 	private Player player;
 	private ShaderMaterial shader;
-	private float size;
+	public float size;
 
 	public PointOfReference PointOfReferenceAtTime(float s)
     {
@@ -110,8 +110,16 @@ public partial class Entity : Node2D
 	// 	return new Color(rgb[0], rgb[1], rgb[2]);
 	// }
 
-	public void AddAcceleration(float accel, float radians, float time)
+	public Event AddAcceleration(float accel, float radians, float time)
 	{
-		path.AddAcceleration(accel, radians, time);
+		return path.AddAcceleration(accel, radians, time);
+	}
+	public Event GetEnd()
+	{
+		return path.GetEnd();
+	}
+	public PointOfReference GetEndPOR()
+	{
+		return path.GetEndPOR();
 	}
 }
