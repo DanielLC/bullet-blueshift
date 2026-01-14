@@ -8,8 +8,8 @@ using System.Text.RegularExpressions;
 public partial class ScriptCompiler : Node
 {
     readonly Regex assignmentRegex = new Regex(@"^\s*(?:(\w+)\s*=\s*)?(.+)$");  // [variable =]? expression
-    readonly Regex commandRegex    = new Regex(@"^\s*(\w+)\s*(.*)$");       // command [expression]
-    public List<string> variableNames;
+    readonly Regex commandRegex = new Regex(@"^\s*(\w+)\s*(.*)$");       // command [expression]
+    public List<string> variableNames = [];
     private enum Jump : byte
     {
         IF,
@@ -40,15 +40,31 @@ public partial class ScriptCompiler : Node
         {
             var varName = match.Groups[1].Value;
             var expression = new Expression();
-            expression.Parse(match.Groups[2].Value);
-            if(varName == "")
+            var error = expression.Parse(match.Groups[2].Value, variableNames.ToArray());
+            Debug.WriteLine(error);
+            if (error != Error.Ok)
+            {
+                throw new Exception("Parsing error " + error + " on line: " + line);
+            }
+            if (varName == "")
             {
                 Script.instructions.Add(new Script.Instruction(Script.OpCode.RUN, expression));
             }
             else
             {
-                var index = variableNames.IndexOf(match.Groups[1].Value);
-                Script.instructions.Add(new Script.Instruction(Script.OpCode.SET, expression, index));
+                var name = match.Groups[1].Value;
+                var index = variableNames.IndexOf(name);
+                if (index == -1)
+                {
+                    index = variableNames.Count;
+                    variableNames.Add(name);
+                    Debug.WriteLine("New variable '" + name + "' at index " + index);
+                    Script.instructions.Add(new Script.Instruction(Script.OpCode.VAR, expression, index));
+                }
+                else
+                {
+                    Script.instructions.Add(new Script.Instruction(Script.OpCode.SET, expression, index));
+                }
             }
         }
         return match.Success;
@@ -73,19 +89,19 @@ public partial class ScriptCompiler : Node
                     expression = new Expression();
                     expression.Parse(match.Groups[2].Value);
                     Script.instructions.Add(new Script.Instruction(Script.OpCode.JUMP_IF, expression));
-                    stack.Push(new StackMemory(Jump.IF, Script.instructions.Count-1, variableNames.Count));
+                    stack.Push(new StackMemory(Jump.IF, Script.instructions.Count - 1, variableNames.Count));
                     break;
                 case "while":
                     expression = new Expression();
                     expression.Parse(match.Groups[2].Value);
                     Script.instructions.Add(new Script.Instruction(Script.OpCode.JUMP_IF, expression));
-                    stack.Push(new StackMemory(Jump.WHILE, Script.instructions.Count-1, variableNames.Count));
+                    stack.Push(new StackMemory(Jump.WHILE, Script.instructions.Count - 1, variableNames.Count));
                     break;
                 case "spawn":
                     expression = new Expression();
                     expression.Parse(match.Groups[2].Value);
                     Script.instructions.Add(new Script.Instruction(Script.OpCode.SPAWN, null, 0, 1));
-                    stack.Push(new StackMemory(Jump.WHILE, Script.instructions.Count-1, variableNames.Count));
+                    stack.Push(new StackMemory(Jump.WHILE, Script.instructions.Count - 1, variableNames.Count));
                     break;
                 case "end":
                     ParseEnd();

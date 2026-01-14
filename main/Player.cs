@@ -41,7 +41,9 @@ public partial class Player : Node2D
         new ScriptCompiler().ParseFile("script.txt");
         var enemy = SpawnEntity(0.1f, 0f, new Event(0, 0.2f, 0.3f).GetTranslation());
         ScriptVM script = new ScriptVM(enemy);
-        events.Add(new Tuple<Event, ScriptVM>(script.Run(), script));
+        var e = script.Run();
+        if (e != null)
+            events.Add(new Tuple<Event, ScriptVM>(e, script));
     }
 
     private void TestLevel()
@@ -132,7 +134,6 @@ public partial class Player : Node2D
         var curEvent = por.GetEvent();
         for(int i = 0; i < events.Count;)
         {
-            // Even odds I flipped the comparison.
             if(events[i].Item1 < curEvent)
             {
                 var newEvent = events[i].Item2.Run();

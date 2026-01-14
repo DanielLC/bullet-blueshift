@@ -5,7 +5,8 @@ using System.Collections.Generic;
 public partial class Script : RefCounted
 {
     public enum OpCode : byte
-    {
+    {      
+        VAR,
         SET,
         RUN,
         JUMP,   //Do I need this one? It might be better just to combine it with JUMP_IF.

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Godot;
 using Godot.Collections;
 
@@ -11,7 +12,7 @@ public partial class ScriptVM : RefCounted
     public ScriptVM(Entity entity, int start = 0)
     {
         instructionPointer = start;
-        variables = new Array();
+        variables = [];
         this.entity = entity;
         context = new ScriptContext(this);
     }
@@ -32,13 +33,13 @@ public partial class ScriptVM : RefCounted
                 return entity.GetEndPOR() * new Event(0, 0, -entity.size);
             }
             var instruction = Script.instructions[instructionPointer];
+            Debug.WriteLine("Running command: " + instruction.opCode);
             switch (instruction.opCode)
             {
-                // TODO: How should commands like accelerate() work?
-                // They really should be distinct from SET. Functions that return values are only useful with SET. Functions that do something are not useful with it.
-                // But if I'm making accelerate() just be a function, it would be better to make it work the same. Basically just a SET command but without a variable it's setting.
-                // Note: accelerate() needs to return an Event, but rotate() wouldn't.
-                // I could make a flag that accelerate() sets.
+                case Script.OpCode.VAR:
+                    variables.Add(instruction.expression.Execute(variables, context));
+                    instructionPointer++;
+                    break;
                 case Script.OpCode.SET:
                     variables[instruction.a] = instruction.expression.Execute(variables, context);
                     instructionPointer++;
