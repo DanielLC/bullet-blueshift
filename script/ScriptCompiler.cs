@@ -13,6 +13,7 @@ public partial class ScriptCompiler : Node
     private enum Jump : byte
     {
         IF,
+        ELSE,
         // For makes things a lot more complicated. Maybe I'll come back to it later. It will likely involve restructuring.
         WHILE,
         SUBROUTINE,
@@ -33,7 +34,7 @@ public partial class ScriptCompiler : Node
     }
     private readonly Stack<StackMemory> stack = new();
 
-    private bool TryParseAssignment(string line)
+    private bool TryParseAssignment(string line, int lineNumber)
     {
         Match match = assignmentRegex.Match(line);
         if (match.Success)
@@ -41,7 +42,6 @@ public partial class ScriptCompiler : Node
             var varName = match.Groups[1].Value;
             var expression = new Expression();
             var error = expression.Parse(match.Groups[2].Value, variableNames.ToArray());
-            Debug.WriteLine(error);
             if (error != Error.Ok)
             {
                 throw new Exception("Parsing error " + error + " on line: " + line);
@@ -58,7 +58,7 @@ public partial class ScriptCompiler : Node
                 {
                     index = variableNames.Count;
                     variableNames.Add(name);
-                    Debug.WriteLine("New variable '" + name + "' at index " + index);
+                    Debug.WriteLine("ScriptCompiler.TryParseAssignment: New variable '" + name + "' at index " + index);
                     Script.instructions.Add(new Script.Instruction(Script.OpCode.VAR, expression, index));
                 }
                 else
@@ -77,18 +77,19 @@ public partial class ScriptCompiler : Node
         Script.instructions.Add(new Script.Instruction(opCode, expression));
     }
 
-    private bool TryParseCommand(string line)
+    private bool TryParseCommand(string line, int lineNumber)
     {
         Expression expression;
-        Match match = assignmentRegex.Match(line);
+        Match match = commandRegex.Match(line);
         if (match.Success)
         {
+            Debug.WriteLine("ScriptCompiler.TryParseCommand: " + match.Groups[1].Value.ToLower());
             switch (match.Groups[1].Value.ToLower())
             {
                 case "if":
                     expression = new Expression();
                     expression.Parse(match.Groups[2].Value);
-                    Script.instructions.Add(new Script.Instruction(Script.OpCode.JUMP_IF, expression));
+                    Script.instructions.Add(new Script.Instruction(Script.OpCode.JUMP_IF, expression, Script.instructions.Count + 1));
                     stack.Push(new StackMemory(Jump.IF, Script.instructions.Count - 1, variableNames.Count));
                     break;
                 case "while":
@@ -102,6 +103,18 @@ public partial class ScriptCompiler : Node
                     expression.Parse(match.Groups[2].Value);
                     Script.instructions.Add(new Script.Instruction(Script.OpCode.SPAWN, null, 0, 1));
                     stack.Push(new StackMemory(Jump.WHILE, Script.instructions.Count - 1, variableNames.Count));
+                    break;
+                case "else":
+                    var memory = stack.Pop();
+                    variableNames.RemoveRange(memory.variableCount, variableNames.Count - memory.variableCount);
+                    if(memory.command != Jump.IF)
+                        throw new Exception("Error on line " + lineNumber + ": else command outside of if statement.");
+                    // Add a JUMP, which will be redirected to the next END.
+                    Script.instructions.Add(new Script.Instruction(Script.OpCode.JUMP, null));
+                    // Redirect the IF to point where you are now.
+                    Script.instructions[memory.position].b = Script.instructions.Count;
+                    // Make the next END redirect this JUMP to point there.
+                    stack.Push(new StackMemory(Jump.ELSE, Script.instructions.Count - 1, variableNames.Count));
                     break;
                 case "end":
                     ParseEnd();
@@ -119,6 +132,9 @@ public partial class ScriptCompiler : Node
         switch (memory.command)
         {
             case Jump.IF:
+                Script.instructions[memory.position].b = Script.instructions.Count;
+                break;
+            case Jump.ELSE:
                 Script.instructions[memory.position].a = Script.instructions.Count;
                 break;
             case Jump.WHILE:
@@ -126,7 +142,7 @@ public partial class ScriptCompiler : Node
                 Script.instructions[memory.position].a = Script.instructions.Count;
                 break;
         }
-        variableNames.RemoveRange(memory.variableCount, stack.Count - memory.variableCount);
+        variableNames.RemoveRange(memory.variableCount, variableNames.Count - memory.variableCount);
     }
 
     public void ParseFile(string filename)
@@ -134,6 +150,7 @@ public partial class ScriptCompiler : Node
         Script.Initialize();
         using var reader = new StreamReader(filename);
         string line;
+        int lineNumber = 0;
         while ((line = reader.ReadLine()) != null)
         {
             line = line.Trim();
@@ -142,9 +159,10 @@ public partial class ScriptCompiler : Node
             //Comment
             else if (line.StartsWith('#')) continue;
             //Command (<Command> <Expression>, <Expression>, ...)
-            else if (TryParseCommand(line)) continue;
+            else if (TryParseCommand(line, lineNumber)) continue;
             //Assignment (variableName = <Expression>)
-            else if (TryParseAssignment(line)) continue;
+            else if (TryParseAssignment(line, lineNumber)) continue;
+            lineNumber++;
         }
     }
 }

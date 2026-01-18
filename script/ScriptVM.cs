@@ -33,29 +33,39 @@ public partial class ScriptVM : RefCounted
                 return entity.GetEndPOR() * new Event(0, 0, -entity.size);
             }
             var instruction = Script.instructions[instructionPointer];
-            Debug.WriteLine("Running command: " + instruction.opCode);
+            Debug.WriteLine("ScriptVM.Run(): Running command: " + instruction.opCode);
+            // Use break if it's going to the next instruction, or continue if it's jumping.
             switch (instruction.opCode)
             {
                 case Script.OpCode.VAR:
-                    variables.Add(instruction.expression.Execute(variables, context));
-                    instructionPointer++;
+                    variables.Add(Execute(instruction.expression));
                     break;
                 case Script.OpCode.SET:
-                    variables[instruction.a] = instruction.expression.Execute(variables, context);
-                    instructionPointer++;
+                    variables[instruction.a] = Execute(instruction.expression);
                     break;
                 case Script.OpCode.RUN:
-                    instruction.expression.Execute(variables, context);
-                    instructionPointer++;
+                    Execute(instruction.expression);
                     break;
                 case Script.OpCode.JUMP:
                     instructionPointer = instruction.a;
-                    break;
+                    continue;
                 case Script.OpCode.JUMP_IF:
-                    if ((bool)instruction.expression.Execute(variables, context))
+                    if ((bool)Execute(instruction.expression))
                         instructionPointer = instruction.a;
-                    break;
+                    else
+                        instructionPointer = instruction.b;
+                    continue;
             }
+            instructionPointer++;
         }
+    }
+    private Variant Execute(Expression expression)
+    {
+        Variant result = expression.Execute(variables, context);
+        if(expression.HasExecuteFailed())
+        {
+            throw new System.Exception("Script Execution Failed");
+        }
+        return result;
     }
 }

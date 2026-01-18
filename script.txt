@@ -1,5 +1,6 @@
 a = 0.1
-accelerate(a, 0, 1)
-accelerate(a, 90, 1)
-accelerate(a, 180, 1)
-accelerate(a, 270, 1)
+if 0 == 0
+	accelerate(a, 0, 1)
+else
+	accelerate(a, 180, 1)
+end
