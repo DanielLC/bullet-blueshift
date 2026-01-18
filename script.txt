@@ -1,6 +1,12 @@
 a = 0.1
-if 0 == 0
-	accelerate(a, 0, 1)
-else
-	accelerate(a, 180, 1)
+angle = 0
+while angle < 180
+	print("Angle: " + str(angle))
+	accelerate(a, angle, 0.05)
+	angle = angle + 10
+end
+while true
+	print("Angle: " + str(angle))
+	accelerate(a, angle, 0.05)
+	angle = angle + 5
 end

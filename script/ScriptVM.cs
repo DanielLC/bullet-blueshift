@@ -22,7 +22,7 @@ public partial class ScriptVM : RefCounted
     public Event Run()
     {
         timeToPause = false;
-        while (true)
+        for (int _ = 0; _ < 256; ++_)
         {
             if (instructionPointer >= Script.instructions.Count)
             {
@@ -58,13 +58,14 @@ public partial class ScriptVM : RefCounted
             }
             instructionPointer++;
         }
+        throw new System.Exception("Infinite loop");
     }
     private Variant Execute(Expression expression)
     {
         Variant result = expression.Execute(variables, context);
         if(expression.HasExecuteFailed())
         {
-            throw new System.Exception("Script Execution Failed");
+            throw new System.Exception("Script Execution Failed: " + expression.GetErrorText());
         }
         return result;
     }

@@ -88,19 +88,19 @@ public partial class ScriptCompiler : Node
             {
                 case "if":
                     expression = new Expression();
-                    expression.Parse(match.Groups[2].Value);
+                    expression.Parse(match.Groups[2].Value, variableNames.ToArray());
                     Script.instructions.Add(new Script.Instruction(Script.OpCode.JUMP_IF, expression, Script.instructions.Count + 1));
                     stack.Push(new StackMemory(Jump.IF, Script.instructions.Count - 1, variableNames.Count));
                     break;
                 case "while":
                     expression = new Expression();
-                    expression.Parse(match.Groups[2].Value);
-                    Script.instructions.Add(new Script.Instruction(Script.OpCode.JUMP_IF, expression));
+                    expression.Parse(match.Groups[2].Value, variableNames.ToArray());
+                    Script.instructions.Add(new Script.Instruction(Script.OpCode.JUMP_IF, expression, Script.instructions.Count + 1));
                     stack.Push(new StackMemory(Jump.WHILE, Script.instructions.Count - 1, variableNames.Count));
                     break;
                 case "spawn":
                     expression = new Expression();
-                    expression.Parse(match.Groups[2].Value);
+                    expression.Parse(match.Groups[2].Value, variableNames.ToArray());
                     Script.instructions.Add(new Script.Instruction(Script.OpCode.SPAWN, null, 0, 1));
                     stack.Push(new StackMemory(Jump.WHILE, Script.instructions.Count - 1, variableNames.Count));
                     break;
@@ -129,17 +129,19 @@ public partial class ScriptCompiler : Node
     private void ParseEnd()
     {
         var memory = stack.Pop();
+        Debug.WriteLine("ScriptCompiler.ParseEnd: " + memory.command);
         switch (memory.command)
         {
             case Jump.IF:
                 Script.instructions[memory.position].b = Script.instructions.Count;
+                Debug.WriteLine("ScriptCompiler.ParseEnd: " + Script.instructions[memory.position].a + " " + Script.instructions[memory.position].b);
                 break;
             case Jump.ELSE:
                 Script.instructions[memory.position].a = Script.instructions.Count;
                 break;
             case Jump.WHILE:
                 Script.instructions.Add(new Script.Instruction(Script.OpCode.JUMP, null, memory.position));
-                Script.instructions[memory.position].a = Script.instructions.Count;
+                Script.instructions[memory.position].b = Script.instructions.Count;
                 break;
         }
         variableNames.RemoveRange(memory.variableCount, variableNames.Count - memory.variableCount);
@@ -163,6 +165,10 @@ public partial class ScriptCompiler : Node
             //Assignment (variableName = <Expression>)
             else if (TryParseAssignment(line, lineNumber)) continue;
             lineNumber++;
+        }
+        if(stack.Count > 0)
+        {
+            throw new Exception("Script is missing END command");
         }
     }
 }
