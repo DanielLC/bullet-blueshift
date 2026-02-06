@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 public partial class Compound : Path
 {
@@ -138,7 +139,6 @@ public partial class Compound : Path
 			events.RemoveAt(0);
 			coevents.RemoveAt(0);
 			endPORs.RemoveAt(0);
-			GD.Print("Component removed");
 			//I may want to loop instead of having it just end here in case more than one component disappears, but it's probably not worth it.
 			UpdateShader();
 			return false;
@@ -221,7 +221,7 @@ public partial class Compound : Path
 		return new Vector4(m.inverse.X.Z, m.inverse.Y.Z, m.inverse.Z.Z, m.inverse.W.Z);
 	}
 
-	public Event AddAcceleration(float accel, float radians, float time)
+	public void AddAcceleration(float accel, float radians, float time)
 	{
 		Path path;
 		PointOfReference translate;
@@ -244,7 +244,6 @@ public partial class Compound : Path
 		coevents.Add(GetCoevent(end));
 		endPORs.Add(end);
 		UpdateShader();
-		return events[^1];
 	}
 
 	public void Extend(float time)
@@ -253,12 +252,7 @@ public partial class Compound : Path
 			return;
 		if (components.Count == 0)
 		{
-			components.Add(new Transform(new Rest(), endPORs[0]));
-			times.Add(time);
-			var newEvent = new Event(0, 0, time);
-			events[0] = newEvent;
-			endPORs[0] = newEvent.GetTranslation();
-			coevents[0] = GetCoevent(endPORs[0]);
+			AddAcceleration(0, 0, time);
 		}
 		else
 		{

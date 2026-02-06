@@ -1,6 +1,5 @@
 using Godot;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 
 public partial class Player : Node2D
@@ -8,7 +7,7 @@ public partial class Player : Node2D
     public const float ACCELERATION = 0.5f;
     public const float PLAYER_SIZE = 0.05f;
     public const float PLAYER_ROTATION = 0f;
-    private List<Tuple<Event, ScriptVM>> events = [];
+    private System.Collections.Generic.List<Tuple<Event, ScriptVM>> events = [];
     //public const float SCALE = 1f;
 
     public PointOfReference por;
@@ -33,9 +32,6 @@ public partial class Player : Node2D
             //entity = SpawnEntity(PLAYER_SIZE, PLAYER_ROTATION);
 
             ScriptedLevel();
-            //BasicLevel();
-            //Benchmark();
-            //TestLevel();
 
         }
         catch (Exception e)
@@ -50,71 +46,6 @@ public partial class Player : Node2D
     {
         new ScriptCompiler().ParseFile("script.txt");
         var enemy = SpawnEntity(0.1f, 0f, new Event(0, 0.2f, 0.3f).GetTranslation());
-        ScriptVM script = new ScriptVM(enemy);
-        var e = script.Run();
-        if (e != null)
-            events.Add(new Tuple<Event, ScriptVM>(e, script));
-    }
-
-    private void TestLevel()
-    {
-        var accel = 0.1f;
-        var t = 1f;
-        var enemy = SpawnEntity(0.25f, 1f);
-        enemy.AddAcceleration(accel / 2, -(float)Math.PI, t);
-        enemy.AddAcceleration(accel / 2, -(float)Math.PI / 2, t);
-        for (int i = 0; i < 20; ++i)
-            enemy.AddAcceleration(accel, i * 0.5f * (float)Math.PI, t);
-
-        //PointOfReference por = new PointOfReference(new Event(0.2f, 0, 2), new Velocity(0, 0.2f));
-        //PointOfReference por = enemy.PointOfReferenceAtTime(2f).GetEvent().GetTranslation();
-        for (var i = 0; i < 100; ++i)
-        {
-            var bullet = SpawnEntity(0.01f, 1f, enemy.PointOfReferenceAtTime(0.1f * i).GetEvent().GetTranslation());
-            bullet.AddAcceleration(0, 0, 10);
-        }
-    }
-
-    private void Benchmark()
-    {
-        var accel = 0.1f;
-        var t = 0.3f;
-        var enemy = SpawnEntity(0.25f, 1f);
-        enemy.AddAcceleration(accel / 2, -(float)Math.PI, t);
-        enemy.AddAcceleration(accel / 2, -(float)Math.PI / 2, t);
-        for (int i = 0; i < 20; ++i)
-            enemy.AddAcceleration(accel, i * 0.5f * (float)Math.PI, t);
-
-        var golden_angle = (3 - Mathf.Sqrt(5)) * (float)Math.PI;
-        var radians = 0f;
-        for (int i = 0; i < 1000; ++i)
-        {
-            var bullet = SpawnEntity(0.01f, 1f);
-            bullet.AddAcceleration(accel, radians, 10);
-            radians = (radians + golden_angle) % (2 * (float)Math.PI);
-        }
-    }
-
-    private void BasicLevel()
-    {
-        var accel = 0.1f;
-        var t = 1f;
-        var enemy = SpawnEntity(0.15f, 1f, new Event(0, -0.3f, -0.1f).GetTranslation());
-        enemy.AddAcceleration(accel / 2, -(float)Math.PI, t);
-        enemy.AddAcceleration(accel / 2, -(float)Math.PI / 2, t);
-        for (int i = 0; i < 20; ++i)
-            enemy.AddAcceleration(accel, i * 0.25f * (float)Math.PI, t);
-
-        var angle_delta_delta = 0.1f;
-        var angle_delta = 0f;
-        var cur_angle = 0f;
-        for (int i = 0; i < 100; ++i)
-        {
-            var bullet = SpawnEntity(0.01f, 1f, enemy.PointOfReferenceAtTime(i * 0.1f));
-            bullet.AddAcceleration(accel, cur_angle, 10);
-            cur_angle = (cur_angle + angle_delta) % (2 * (float)Math.PI);
-            angle_delta = (angle_delta + angle_delta_delta) % (2 * (float)Math.PI);
-        }
     }
 
     public override void _Process(double delta)
@@ -183,15 +114,19 @@ public partial class Player : Node2D
         }
     }
 
-    public static Entity SpawnEntity(float size, float rotationSpeed, PointOfReference pointOfReference)
+    public static Entity SpawnEntity(float size, float rotationSpeed, PointOfReference pointOfReference, int instructionPointer = 0, Godot.Collections.Array variables = null)
     {
         Entity entity = (Entity)EntityScene.Instantiate();
         entity.Initialize(instance, size, pointOfReference, rotationSpeed);
         instance.AddChild(entity);
+        ScriptVM script = new ScriptVM(entity, instructionPointer, variables);
+        var e = script.Run();
+        if (e != null)
+            instance.events.Add(new Tuple<Event, ScriptVM>(e, script));
         return entity;
     }
 
-    private Entity SpawnEntity(float size, float rotationSpeed)
+    /*private Entity SpawnEntity(float size, float rotationSpeed)
     {
         return SpawnEntity(size, rotationSpeed, PointOfReference.IDENTITY);
     }
@@ -199,5 +134,5 @@ public partial class Player : Node2D
     private Entity SpawnEntity()
     {
         return SpawnEntity(0.1f, 1f, PointOfReference.IDENTITY);
-    }
+    }*/
 }

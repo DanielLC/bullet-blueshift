@@ -16,7 +16,6 @@ public partial class Entity : Node2D
 
 	public void Initialize(Player player, float size, PointOfReference pointOfReference, float rotationSpeed)
 	{
-		GD.Print("Entity spawned.");
 		this.player = player;
 		//Sprite2D sprite = GetNode<Sprite2D>("Sprite2D");
 		var sprite = GetNode<MeshInstance2D>("MeshInstance2D");
@@ -42,14 +41,12 @@ public partial class Entity : Node2D
 	{
 		if (path.CheckIfAllInPast(player.por.GetEvent(), size, shader))
 		{
-			GD.Print("Entity Removed");
 			QueueFree();
 			return;
 		}
 		PointOfReference relativePOR = path.Seen(player.por);
 		if (relativePOR == null)
 		{
-			GD.Print("Entity Invisible");
 			//For now I'll just move it out of view.
 			Position = new Vector2(9999, 9999);
 			return; //TODO: Make it invisible or something.
@@ -110,9 +107,14 @@ public partial class Entity : Node2D
 	// 	return new Color(rgb[0], rgb[1], rgb[2]);
 	// }
 
-	public Event AddAcceleration(float accel, float radians, float time)
+	public void AddAcceleration(float accel, float radians, float time)
 	{
-		return path.AddAcceleration(accel, radians, time);
+		path.AddAcceleration(accel, radians, time);
+	}
+
+	public void Extend(float time)
+	{
+		path.Extend(time);
 	}
 	public Event GetEnd()
 	{

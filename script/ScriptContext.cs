@@ -14,13 +14,13 @@ public partial class ScriptContext : RefCounted
     }
     public void accelerate(float acceleration, float angle, float time)
     {
-        print("Accelerating in the script");
         entity.AddAcceleration(acceleration, angle * Mathf.Pi/180, time);
         scriptVM.timeToPause = true;
     }
-    public void spawn()
+    public void wait(float time)
     {
-        
+        entity.Extend(time);
+        scriptVM.timeToPause = true;
     }
     //Everything here should be in an Emitter class that ScriptContext extends.
     //TODO: Modify this to also show it on the screen.
@@ -29,29 +29,36 @@ public partial class ScriptContext : RefCounted
         GD.Print(string.Concat(args));
     }
     // Math constants
-    public float e = (float)Math.E;
-    public float pi = (float)Math.PI;
+    public float e = Mathf.E;
+    public float pi = MathF.PI;
+    public float goldenAngle = 180 * (3 - Mathf.Sqrt(5));
     // Math functions
-    public float Sqrt(float x) => (float)Math.Sqrt(x);
-    public float Exp(float x) => (float)Math.Exp(x);
-    public float Pow(float x, float y) => (float)Math.Pow(x, y);
-    public float Log(float x) => (float)Math.Log(x);
-    public float Log(float x, float b) => (float)Math.Log(x, b);
-    public float Sin(float x) => (float)Math.Sin(x);
-    public float Cos(float x) => (float)Math.Cos(x);
-    public float Tan(float x) => (float)Math.Tan(x);
-    public float Asin(float x) => (float)Math.Asin(x);
-    public float Acos(float x) => (float)Math.Acos(x);
-    public float Atan(float x) => (float)Math.Atan(x);
-    public float Atan2(float y, float x) => (float)Math.Atan2(y, x);
-    public float Sinh(float x) => (float)Math.Sinh(x);
-    public float Cosh(float x) => (float)Math.Cosh(x);
-    public float Tanh(float x) => (float)Math.Tanh(x);
-    public float Asinh(float x) => (float)Math.Asinh(x);
-    public float Acosh(float x) => (float)Math.Acosh(x);
-    public float Atanh(float x) => (float)Math.Atanh(x);
+    public float sqrt(float x) => Mathf.Sqrt(x);
+    public float exp(float x) => Mathf.Exp(x);
+    public float pow(float x, float y) => Mathf.Pow(x, y);
+    public float log(float x) => Mathf.Log(x);
+    public float log(float x, float b) => Mathf.Log(x) / Mathf.Log(b);
+    public float abs(float x) => Mathf.Abs(x);
+    public float floor(float x) => Mathf.Floor(x);
+    public float ceil(float x) => Mathf.Ceil(x);
+    public float round(float x) => Mathf.Round(x);
+    // Trig
+    public float sin(float x) => Mathf.Sin(x * Mathf.Pi/180);
+    public float cos(float x) => Mathf.Cos(x * Mathf.Pi/180);
+    public float tan(float x) => Mathf.Tan(x * Mathf.Pi/180);
+    public float asin(float x) => 180 / Mathf.Pi * Mathf.Asin(x);
+    public float acos(float x) => 180 / Mathf.Pi * Mathf.Acos(x);
+    public float atan(float x) => 180 / Mathf.Pi * Mathf.Atan(x);
+    public float atan2(float y, float x) => 180 / Mathf.Pi * Mathf.Atan2(y, x);
+    // Hyperbolic trig
+    public float sinh(float x) => Mathf.Sinh(x);
+    public float cosh(float x) => Mathf.Cosh(x);
+    public float tanh(float x) => Mathf.Tanh(x);
+    public float asinh(float x) => Mathf.Asinh(x);
+    public float acosh(float x) => Mathf.Acosh(x);
+    public float atanh(float x) => Mathf.Atanh(x);
     // Random functions
-    public float Random() => rng.Randf();
-    public int RandiRange(int min, int max) => rng.RandiRange(min, max);
-    public float Normal(float mean, float deviation) => rng.Randfn(mean, deviation);
+    public float random() => rng.Randf();
+    public int randInt(int min, int max) => rng.RandiRange(min, max);
+    public float normal(float mean, float deviation) => rng.Randfn(mean, deviation);
 }
