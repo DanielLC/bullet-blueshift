@@ -127,7 +127,7 @@ public partial class Player : Node2D
         Entity entity = (Entity)EntityScene.Instantiate();
         entity.Initialize(instance, size, pointOfReference, rotationSpeed);
         instance.AddChild(entity);
-        ScriptVM script = new ScriptVM(entity, instructionPointer, variables);
+        ScriptVM script = new(entity, instructionPointer, variables);
         var e = script.Run();
         if (e != null)
             instance.events.Add(new Tuple<Event, ScriptVM>(e, script));

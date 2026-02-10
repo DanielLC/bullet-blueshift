@@ -1,6 +1,6 @@
 Doing:
 
-
+Make sure Regex failures give clearer errors!
 
 TODO:
 

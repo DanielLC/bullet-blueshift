@@ -8,14 +8,16 @@ using System.Text.RegularExpressions;
 
 public partial class ScriptCompiler : Node
 {
-    readonly Regex assignmentRegex = new Regex(@"^\s*(?:(\w+)\s*=\s*)?(.+)$");  // [variable =]? expression
-    readonly Regex commandRegex = new Regex(@"^\s*(\w+)\s*(.*)$");              // command [expression]
-    readonly Regex subroutineRegex = new Regex(@"^\s*SUBROUTINE\s+(\w+)", RegexOptions.IgnoreCase | RegexOptions.Multiline);   // name [parameter,]* [parameter]
+    readonly Regex assignmentRegex = new(@"^\s*(?:([a-z_]\w*)\s*=\s*)?(.+)$", RegexOptions.IgnoreCase);  // [variable =]? expression
+    readonly Regex commandRegex = new(@"^\s*(\w+)\s*(.*)$");              // command [expression]
+    readonly Regex subCallRegex = new(@"^\s*(\w+)\s*\((.*)\)\s*$");
+    readonly Regex subParamRegex = new(@"^\s*(\w+)\s*\(((?:[a-z_]\w*\s*,\s*)*[a-z_]\w*)\s*\)\s*$");
+    readonly Regex subroutineRegex = new(@"^\s*SUBROUTINE\s+(\w+)", RegexOptions.IgnoreCase | RegexOptions.Multiline);   // name [parameter,]* [parameter]
     private List<string> variableNames = [];
     // I need a list of subroutine names so that it can detect when you're writing to a subroutine. Then I need to store a list of commands that jump to a subroutine and which one they're going to, and a dictionary of subroutines and their positions.
     private string[] subroutineNames = [];
     private List<Tuple<int, string>> subroutineCalls = [];
-    private Dictionary<string, Tuple<int, int>> subroutineData = new Dictionary<string, Tuple<int, int>>();
+    private Dictionary<string, Tuple<int, int>> subroutineData = new();
     private enum Jump : byte
     {
         IF,
@@ -79,7 +81,7 @@ public partial class ScriptCompiler : Node
 
     private void ParseBasicInstruction(int lineNumber, Match match, Script.OpCode opCode)
     {
-        Expression expression = new Expression();
+        Expression expression = new();
         expression.Parse("[" + match.Groups[2].Value + "]");
         Script.AddInstruction(opCode, lineNumber, expression);
     }
@@ -121,36 +123,31 @@ public partial class ScriptCompiler : Node
                     ParseEnd(lineNumber);
                     return true;
                 case "subroutine":
-                    Script.AddInstruction(Script.OpCode.JUMP, lineNumber);
-                    // Split based on whitespace.
-                    var parts = match.Groups[2].Value.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
-                    //The first one is the name of the subroutine.
-                    subroutineData.Add(parts[0], new Tuple<int, int> (Script.instructions.Count, variableNames.Count));
-                    // This has a new scope, so push it to the stack.
-                    stack.Push(new StackMemory(Jump.SUBROUTINE, Script.instructions.Count - 1, variableNames.Count));
-                    // The rest are variables that need to be added.
-                    variableNames.AddRange(parts.Skip(1));
-                    GD.Print("ScriptCompiler.TryParseCommand: ", string.Join(", ", variableNames));
-                    return true;
+                    {
+                        Script.AddInstruction(Script.OpCode.JUMP, lineNumber);
+                        match = subParamRegex.Match(match.Groups[2].Value);
+                        GD.Print("ScriptCompiler.TryParseCommand: subroutine ", match.Success); //I need to give proper errors for failed regexes.
+                        var subroutineName = match.Groups[1].Value.ToLower();
+                        var parameters = match.Groups[2].Value.Split(",", StringSplitOptions.TrimEntries);
+                        subroutineData.Add(subroutineName, new Tuple<int, int>(Script.instructions.Count, variableNames.Count));
+                        // This has a new scope, so push it to the stack.
+                        stack.Push(new StackMemory(Jump.SUBROUTINE, Script.instructions.Count - 1, variableNames.Count));
+                        variableNames.AddRange(parameters);
+                        GD.Print("ScriptCompiler.TryParseCommand: subroutine ", subroutineName, " ", string.Join(", ", parameters));
+                        return true;
+                    }
                 case "call":
-                    match = commandRegex.Match(match.Groups[2].Value);
-                    commandName = match.Groups[1].Value.ToLower();
-                    // Add it to the list of places the subroutine is being called at, so it can add the jump.
-                    subroutineCalls.Add(new Tuple<int, string>(Script.instructions.Count, commandName));
-                    expression = new Expression();
-                    expression.Parse("[" + match.Groups[2].Value + "]", variableNames.ToArray());
-                    Script.AddInstruction(Script.OpCode.GOSUB, lineNumber, expression);
-                    return true;
                 case "spawn":
-                    // Same as call, but with the SPAWN command
-                    match = commandRegex.Match(match.Groups[2].Value);
-                    commandName = match.Groups[1].Value.ToLower();
-                    // Add it to the list of places the subroutine is being called at, so it can add the jump.
-                    subroutineCalls.Add(new Tuple<int, string>(Script.instructions.Count, commandName));
-                    expression = new Expression();
-                    expression.Parse("[" + match.Groups[2].Value + "]", variableNames.ToArray());
-                    Script.AddInstruction(Script.OpCode.SPAWN, lineNumber, expression);
-                    return true;
+                    {
+                        match = subCallRegex.Match(match.Groups[2].Value);
+                        var subroutineName = match.Groups[1].Value.ToLower();
+                        // Add it to the list of places the subroutine is being called at, so it can add the jump.
+                        subroutineCalls.Add(new Tuple<int, string>(Script.instructions.Count, subroutineName));
+                        expression = new Expression();
+                        expression.Parse("[" + match.Groups[2].Value + "]", [.. variableNames]);
+                        Script.AddInstruction(commandName == "call" ? Script.OpCode.GOSUB : Script.OpCode.SPAWN, lineNumber, expression);
+                        return true;
+                    }
                 default:
                     return false;
             }
@@ -199,7 +196,8 @@ public partial class ScriptCompiler : Node
 
     private void SubroutineFinalPass()
     {
-        foreach (var (index, name) in subroutineCalls) {
+        foreach (var (index, name) in subroutineCalls)
+        {
             (Script.instructions[index].a, Script.instructions[index].b) = subroutineData[name];
         }
     }

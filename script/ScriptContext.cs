@@ -3,7 +3,7 @@ using System;
 
 public partial class ScriptContext : RefCounted
 {
-    private static RandomNumberGenerator rng = new RandomNumberGenerator();
+    private static RandomNumberGenerator rng = new();
     private Entity entity;
     private ScriptVM scriptVM;
     //This part is just ScriptContext. Emitters can't accelerate.
