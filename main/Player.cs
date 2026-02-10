@@ -7,6 +7,7 @@ public partial class Player : Node2D
     public const float ACCELERATION = 0.5f;
     public const float PLAYER_SIZE = 0.05f;
     public const float PLAYER_ROTATION = 0f;
+    public const int SPAWN_CAP = 1000;
     private System.Collections.Generic.List<Tuple<Event, ScriptVM>> events = [];
     //public const float SCALE = 1f;
 
@@ -116,6 +117,13 @@ public partial class Player : Node2D
 
     public static Entity SpawnEntity(float size, float rotationSpeed, PointOfReference pointOfReference, int instructionPointer = 0, Godot.Collections.Array variables = null)
     {
+        if(instance.GetChildCount() >= SPAWN_CAP)
+        {
+            // There's too many bullets. Stop spawning them.
+            // This should probably be logged somehow? But if there's too many bullets, it's probably going to be a lot too many. Maybe just count the number?
+            GD.Print("Player.Spawn: Span cap reached");
+            return null;
+        }
         Entity entity = (Entity)EntityScene.Instantiate();
         entity.Initialize(instance, size, pointOfReference, rotationSpeed);
         instance.AddChild(entity);

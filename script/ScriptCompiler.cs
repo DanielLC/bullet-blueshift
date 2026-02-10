@@ -105,12 +105,6 @@ public partial class ScriptCompiler : Node
                     Script.AddInstruction(Script.OpCode.JUMP_IF, lineNumber, expression, Script.instructions.Count + 1);
                     stack.Push(new StackMemory(Jump.WHILE, Script.instructions.Count - 1, variableNames.Count));
                     return true;
-                case "spawn":
-                    expression = new Expression();
-                    expression.Parse("[" + match.Groups[2].Value + "]", variableNames.ToArray());
-                    Script.AddInstruction(Script.OpCode.SPAWN, lineNumber, expression, 0, 1);
-                    stack.Push(new StackMemory(Jump.SPAWN, Script.instructions.Count - 1, variableNames.Count));
-                    return true;
                 case "else":
                     var memory = stack.Pop();
                     variableNames.RemoveRange(memory.variableCount, variableNames.Count - memory.variableCount);
@@ -138,21 +132,26 @@ public partial class ScriptCompiler : Node
                     variableNames.AddRange(parts.Skip(1));
                     GD.Print("ScriptCompiler.TryParseCommand: ", string.Join(", ", variableNames));
                     return true;
+                case "call":
+                    match = commandRegex.Match(match.Groups[2].Value);
+                    commandName = match.Groups[1].Value.ToLower();
+                    // Add it to the list of places the subroutine is being called at, so it can add the jump.
+                    subroutineCalls.Add(new Tuple<int, string>(Script.instructions.Count, commandName));
+                    expression = new Expression();
+                    expression.Parse("[" + match.Groups[2].Value + "]", variableNames.ToArray());
+                    Script.AddInstruction(Script.OpCode.GOSUB, lineNumber, expression);
+                    return true;
+                case "spawn":
+                    // Same as call, but with the SPAWN command
+                    match = commandRegex.Match(match.Groups[2].Value);
+                    commandName = match.Groups[1].Value.ToLower();
+                    // Add it to the list of places the subroutine is being called at, so it can add the jump.
+                    subroutineCalls.Add(new Tuple<int, string>(Script.instructions.Count, commandName));
+                    expression = new Expression();
+                    expression.Parse("[" + match.Groups[2].Value + "]", variableNames.ToArray());
+                    Script.AddInstruction(Script.OpCode.SPAWN, lineNumber, expression);
+                    return true;
                 default:
-                    /*GD.Print("ScriptCompiler.TryParseCommand: Checking for a subroutine");
-                    GD.Print("Command: " + commandName);
-                    GD.Print("Subroutine Names: " + String.Join(", ", subroutineNames));*/
-                    //It could be a subroutine.
-                    if(Array.IndexOf(subroutineNames, commandName) != -1) {
-                        GD.Print("ScriptCompiler.TryParseCommand: GOSUB");
-                        GD.Print("ScriptCompiler.TryParseCommand: ", match.Groups[2].Value);
-                        // Add it to the list of places the subroutine is being called at, so it can add the jump.
-                        subroutineCalls.Add(new Tuple<int, string>(Script.instructions.Count, commandName));
-                        expression = new Expression();
-                        expression.Parse("[" + match.Groups[2].Value + "]", variableNames.ToArray());
-                        Script.AddInstruction(Script.OpCode.GOSUB, lineNumber, expression);
-                        return true;
-                    }
                     return false;
             }
         }

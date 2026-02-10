@@ -67,21 +67,36 @@ public partial class ScriptVM : RefCounted
                         instructionPointer = instruction.b;
                     continue;
                 case Script.OpCode.SPAWN:
-                    Spawn((Array)Execute(instruction.expression), instructionPointer + 1);
-                    instructionPointer = instruction.a;
-                    continue;
+                    {
+                        // TODO: It might be better to loop through this explicitly.
+                        Array newVars = variables[0..instruction.b].Duplicate(true);
+                        newVars.AddRange((Array)Execute(instruction.expression));
+                        GD.Print("ScriptVM.Run: ", string.Join(", ", newVars));
+                        Player.SpawnEntity(0.01f, 0, entity.GetEndPOR(), instruction.a, newVars);
+                        break;
+                    }
                 case Script.OpCode.GOSUB:
-                    stack.Push(new StackElement(variables[instruction.b..], instruction.b, instructionPointer + 1));
-                    variables.Resize(instruction.b);
-                    var newVars = (Array)Execute(instruction.expression);
-                    variables.AddRange(newVars);
-                    instructionPointer = instruction.a;
-                    continue;
+                    {
+                        stack.Push(new StackElement(variables[instruction.b..], instruction.b, instructionPointer + 1));
+                        variables.Resize(instruction.b);
+                        Array newVars = (Array)Execute(instruction.expression);
+                        variables.AddRange(newVars);
+                        instructionPointer = instruction.a;
+                        continue;
+                    }
                 case Script.OpCode.RETURN:
-                    var stackElement = stack.Pop();
-                    variables = variables[stackElement.variablesInScope..] + stackElement.variablesOutOfScope;
-                    instructionPointer = stackElement.returnTo;
-                    continue;
+                    if (stack.Count == 0)
+                    {
+                        // If there's nothing in the stack, that means it was spawned as a bullet instead of called as a subroutine, so it's time to DIE.
+                        return null;
+                    }
+                    else
+                    {
+                        var stackElement = stack.Pop();
+                        variables = variables[stackElement.variablesInScope..] + stackElement.variablesOutOfScope;
+                        instructionPointer = stackElement.returnTo;
+                        continue;
+                    }
                 case Script.OpCode.DIE:
                     return null;
             }
@@ -93,7 +108,7 @@ public partial class ScriptVM : RefCounted
     {
         GD.Print("ScriptVM.Execute: ", string.Join(", ", variables));
         Variant result = expression.Execute(variables, context);
-        if(expression.HasExecuteFailed())
+        if (expression.HasExecuteFailed())
         {
             throw new System.Exception("Script Execution Failed: " + expression.GetErrorText());
         }
@@ -101,10 +116,9 @@ public partial class ScriptVM : RefCounted
     }
     private void Spawn(Array arguments, int instructionPointer)
     {
-        float size = (float)arguments[0];
+        // Setting these to default. I'm probably going to make it so you run a function to change them rather than initially set them to something else.
+        float size = 0.1f;
         float rotationSpeed = 0;
-        if(arguments.Count > 1)
-            rotationSpeed = (float)arguments[1];
         Player.SpawnEntity(size, rotationSpeed, entity.GetEndPOR(), instructionPointer, variables.Duplicate(true));
     }
 }

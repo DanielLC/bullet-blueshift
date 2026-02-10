@@ -1,45 +1,12 @@
-Old script:
-	
-a = 0.2
-angle = 0
-angle2 = 0
-while angle < 180
-	accelerate(a, angle, 0.05)
-	angle = angle + 20
-end
-while true
-	accelerate(a, angle, 0.05)
-	spawn 0.01
-		#wait(10)
-		accelerate(a, angle2, 10)
-	end
-	angle = (angle + 10)%360
-	angle2 = (angle2 + 10)%360
-end
-
 Doing:
 
-I just finished working on subroutines.
 
-There's a first pass where it looks through the code for anything formatted as declaring a subroutine, and adds its name to a list.
-
-In the main pass, when it finds a subroutine definition, it adds that line to a list of subroutine positions, the becomes a JUMP command to lead to the END, and the END becomes a RETURN command. It also adds the list of parameters to the list of variables, with the old length going on the stack the same as it would for all the other scope changes.
-
-When it finds a subroutine call, it uses the GOSUB command. Whatever is after the subroutine name gets [] around it and becomes the Expression, so it will evaluate to a list of arguments. The a nad b parameters are not yet set. It also adds to a list of subroutine calls.
-
-Then there's a final pass. It looks through each of the subroutine calls, sets a to the position of the subroutine, and b to the number of variables at the time the subroutine is defined.
-
-When the script runs, the GOSUB command copies everything past the first `a` variables onto a stack along with `a` and the line it was called from, then appends the list the Expression returns to the first `a` variables. When it gets to a RETURN, it drops everything but the first `a` variables and jumps to the spot it was called from.
-
-Note: I don't really need `a` on the stack. I could put that as part of the RETURN command.
 
 TODO:
 
 Collisions
-Sprites
 Make it so enemies can have multiple overlapping sprites spinning at different rates
 Separate compound_shader into shader include files
-Add in scripting language
 
 Notes:
 
