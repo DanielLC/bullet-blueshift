@@ -143,4 +143,11 @@ public partial class Player : Node2D
     {
         return SpawnEntity(0.1f, 1f, PointOfReference.IDENTITY);
     }*/
+
+    public static void Error(params object[] args)
+    {
+        GD.Print("ERROR: ", string.Join("", args));
+        instance.GetTree().Quit();
+        //instance.GetTree().Paused = true;
+    }
 }

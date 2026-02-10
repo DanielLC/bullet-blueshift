@@ -14,7 +14,7 @@ public class PointOfReference
     //const float[] PACKED_NAN = {NAN,NAN,NAN,NAN,NAN,NAN,NAN,NAN,NAN,NAN,NAN,NAN,NAN,NAN,NAN,NAN};
     static PointOfReference()
     {
-        Projection identity = new Projection(
+        Projection identity = new(
             new Vector4(1, 0, 0, 0),
             new Vector4(0, 1, 0, 0),
             new Vector4(0, 0, 1, 0),

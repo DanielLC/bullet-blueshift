@@ -1,12 +1,16 @@
 Doing:
 
-Make sure Regex failures give clearer errors!
+Emitters
 
 TODO:
 
+Make it so you can load sprites instead of just the built in one
 Collisions
 Make it so enemies can have multiple overlapping sprites spinning at different rates
 Separate compound_shader into shader include files
+Elif statements
+Make it so you can print messages on the screen. Players won't want to use the console, and ideally it could allow dialogue.
+Circular screen
 
 Notes:
 

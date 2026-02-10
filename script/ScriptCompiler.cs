@@ -53,7 +53,8 @@ public partial class ScriptCompiler : Node
             var error = expression.Parse(match.Groups[2].Value, variableNames.ToArray());
             if (error != Error.Ok)
             {
-                throw new Exception("Parsing error " + error + " on line " + lineNumber + ": " + line);
+                Player.Error("Parsing error ", error, " on line ", lineNumber + 1, ": ", line);
+                return true;
             }
             if (varName == "")
             {
@@ -111,7 +112,10 @@ public partial class ScriptCompiler : Node
                     var memory = stack.Pop();
                     variableNames.RemoveRange(memory.variableCount, variableNames.Count - memory.variableCount);
                     if (memory.command != Jump.IF)
-                        throw new Exception("Error on line " + lineNumber + ": else command outside of if statement.");
+                    {
+                        Player.Error("Error on line ", lineNumber + 1, ": else command outside of if statement.");
+                        return true;
+                    }
                     // Add a JUMP, which will be redirected to the next END.
                     Script.AddInstruction(Script.OpCode.JUMP, lineNumber);
                     // Redirect the IF to point where you are now.
@@ -126,7 +130,11 @@ public partial class ScriptCompiler : Node
                     {
                         Script.AddInstruction(Script.OpCode.JUMP, lineNumber);
                         match = subParamRegex.Match(match.Groups[2].Value);
-                        GD.Print("ScriptCompiler.TryParseCommand: subroutine ", match.Success); //I need to give proper errors for failed regexes.
+                        if (!match.Success)
+                        {
+                            Player.Error("Subroutine definition failed to parse on line ", lineNumber + 1, ": ", line);
+                            return true;
+                        }
                         var subroutineName = match.Groups[1].Value.ToLower();
                         var parameters = match.Groups[2].Value.Split(",", StringSplitOptions.TrimEntries);
                         subroutineData.Add(subroutineName, new Tuple<int, int>(Script.instructions.Count, variableNames.Count));
@@ -140,6 +148,11 @@ public partial class ScriptCompiler : Node
                 case "spawn":
                     {
                         match = subCallRegex.Match(match.Groups[2].Value);
+                        if (!match.Success)
+                        {
+                            Player.Error("Command ", commandName, " failed to parse on line ", lineNumber + 1, ": ", line);
+                            return true;
+                        }
                         var subroutineName = match.Groups[1].Value.ToLower();
                         // Add it to the list of places the subroutine is being called at, so it can add the jump.
                         subroutineCalls.Add(new Tuple<int, string>(Script.instructions.Count, subroutineName));
@@ -219,6 +232,7 @@ public partial class ScriptCompiler : Node
             else if (TryParseCommand(line, lineNumber)) continue;
             //Assignment (variableName = <Expression>)
             else if (TryParseAssignment(line, lineNumber)) continue;
+            else Player.Error("Line ", lineNumber + 1, " failed to parse: ", line);
         }
         SubroutineFinalPass();
         if (stack.Count > 0)

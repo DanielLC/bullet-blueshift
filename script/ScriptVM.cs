@@ -19,7 +19,7 @@ public partial class ScriptVM : RefCounted
         this.entity = entity;
         context = new ScriptContext(this);
     }
-    private struct StackElement(Array variablesOutOfScope, int variablesInScope, int jumpTo)
+    private readonly struct StackElement(Array variablesOutOfScope, int variablesInScope, int jumpTo)
     {
         public readonly Array variablesOutOfScope = variablesOutOfScope;
         public readonly int variablesInScope = variablesInScope;
@@ -49,19 +49,19 @@ public partial class ScriptVM : RefCounted
             switch (instruction.opCode)
             {
                 case Script.OpCode.VAR:
-                    variables.Add(Execute(instruction.expression));
+                    variables.Add(Execute(instruction));
                     break;
                 case Script.OpCode.SET:
-                    variables[instruction.a] = Execute(instruction.expression);
+                    variables[instruction.a] = Execute(instruction);
                     break;
                 case Script.OpCode.RUN:
-                    Execute(instruction.expression);
+                    Execute(instruction);
                     break;
                 case Script.OpCode.JUMP:
                     instructionPointer = instruction.a;
                     continue;
                 case Script.OpCode.JUMP_IF:
-                    if ((bool)Execute(instruction.expression))
+                    if ((bool)Execute(instruction))
                         instructionPointer = instruction.a;
                     else
                         instructionPointer = instruction.b;
@@ -70,8 +70,8 @@ public partial class ScriptVM : RefCounted
                     {
                         // TODO: It might be better to loop through this explicitly.
                         Array newVars = variables[0..instruction.b].Duplicate(true);
-                        newVars.AddRange((Array)Execute(instruction.expression));
-                        GD.Print("ScriptVM.Run: ", string.Join(", ", newVars));
+                        newVars.AddRange((Array)Execute(instruction));
+                        //GD.Print("ScriptVM.Run: ", string.Join(", ", newVars));
                         Player.SpawnEntity(0.01f, 0, entity.GetEndPOR(), instruction.a, newVars);
                         break;
                     }
@@ -79,7 +79,7 @@ public partial class ScriptVM : RefCounted
                     {
                         stack.Push(new StackElement(variables[instruction.b..], instruction.b, instructionPointer + 1));
                         variables.Resize(instruction.b);
-                        Array newVars = (Array)Execute(instruction.expression);
+                        Array newVars = (Array)Execute(instruction);
                         variables.AddRange(newVars);
                         instructionPointer = instruction.a;
                         continue;
@@ -102,15 +102,16 @@ public partial class ScriptVM : RefCounted
             }
             instructionPointer++;
         }
-        throw new System.Exception("Infinite loop");
+        Player.Error("Infinite loop containing line ", Script.instructions[instructionPointer].line);
+        return null;
     }
-    private Variant Execute(Expression expression)
+    private Variant Execute(Script.Instruction instruction)
     {
         GD.Print("ScriptVM.Execute: ", string.Join(", ", variables));
-        Variant result = expression.Execute(variables, context);
-        if (expression.HasExecuteFailed())
+        Variant result = instruction.expression.Execute(variables, context);
+        if (instruction.expression.HasExecuteFailed())
         {
-            throw new System.Exception("Script Execution Failed: " + expression.GetErrorText());
+            Player.Error("Script execution failed on line ", instruction.line, " (Did you use an undeclared variable?): ", Script.instructions[instruction.line]);
         }
         return result;
     }
