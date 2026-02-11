@@ -4,18 +4,61 @@ using System.Drawing;
 
 public partial class Entity : Node2D
 {
-	private Compound path;
+	public Compound path;
 	private Player player;
 	private ShaderMaterial shader;
 	public float size;
+	private EmitterHeap emitters = new();
+	public Entity baseEntity;
+	virtual public float Time => path.EndTime;
+
+	public Emitter NewEmitter(int instructionPointer, Godot.Collections.Array variables)
+	{
+		//TODO: Check for too many emitters.
+		Emitter emitter = new(this);
+		ScriptVM script = new(emitter, instructionPointer, variables);
+		emitters.Push(0, script);
+		UpdateEmitters();
+		return emitter;
+	}
+
+	virtual public void UpdateEmitters()
+	{
+		if (emitters.IsEmpty)
+			return;
+		for (int _ = 0; _ < 256; ++_)
+		{
+			(float time, ScriptVM emitter) = emitters.Peek();
+			if (path.EndTime < time)
+				return;
+			if (emitter.Run())
+			{
+				// If it's still running, update the time.
+				// It would be faster to keep looping until the time changes, but then that would make the infinite loop checker more complicated.
+				// I can also use emitter.timeToPause.
+				emitters.UpdateTop(emitter.entity.Time);
+			}
+			else
+			{
+				// If it's not running anymore, destroy the emitter.
+				emitters.Pop();
+				emitter.entity.QueueFree();
+			}
+			//GD.Print("Entity.UpdateEmitters: ", emitter.entity.Time);
+			if (emitters.IsEmpty)
+				return;
+		}
+		Player.Error("Infinite emitter loop containing line ", emitters.Peek().emitter.InstructionPointer);
+	}
 
 	public PointOfReference PointOfReferenceAtTime(float s)
-    {
-        return path.PointOfReferenceAtTime(s);
-    }
+	{
+		return path.PointOfReferenceAtTime(s);
+	}
 
 	public void Initialize(Player player, float size, PointOfReference pointOfReference, float rotationSpeed)
 	{
+		baseEntity = this;
 		this.player = player;
 		//Sprite2D sprite = GetNode<Sprite2D>("Sprite2D");
 		var sprite = GetNode<MeshInstance2D>("MeshInstance2D");
@@ -107,14 +150,16 @@ public partial class Entity : Node2D
 	// 	return new Color(rgb[0], rgb[1], rgb[2]);
 	// }
 
-	public void AddAcceleration(float accel, float radians, float time)
+	virtual public void AddAcceleration(float accel, float radians, float time)
 	{
 		path.AddAcceleration(accel, radians, time);
+		UpdateEmitters();
 	}
 
-	public void Extend(float time)
+	virtual public void Extend(float time)
 	{
 		path.Extend(time);
+		UpdateEmitters();
 	}
 	public Event GetEnd()
 	{

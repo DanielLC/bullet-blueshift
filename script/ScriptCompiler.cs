@@ -145,27 +145,34 @@ public partial class ScriptCompiler : Node
                         return true;
                     }
                 case "call":
+                    CallSpawnEmitter(Script.OpCode.GOSUB, commandName, match.Groups[2].Value, lineNumber, line);
+                    return true;
                 case "spawn":
-                    {
-                        match = subCallRegex.Match(match.Groups[2].Value);
-                        if (!match.Success)
-                        {
-                            Player.Error("Command ", commandName, " failed to parse on line ", lineNumber + 1, ": ", line);
-                            return true;
-                        }
-                        var subroutineName = match.Groups[1].Value.ToLower();
-                        // Add it to the list of places the subroutine is being called at, so it can add the jump.
-                        subroutineCalls.Add(new Tuple<int, string>(Script.instructions.Count, subroutineName));
-                        expression = new Expression();
-                        expression.Parse("[" + match.Groups[2].Value + "]", [.. variableNames]);
-                        Script.AddInstruction(commandName == "call" ? Script.OpCode.GOSUB : Script.OpCode.SPAWN, lineNumber, expression);
-                        return true;
-                    }
+                    CallSpawnEmitter(Script.OpCode.SPAWN, commandName, match.Groups[2].Value, lineNumber, line);
+                    return true;
+                case "emitter":
+                    CallSpawnEmitter(Script.OpCode.EMITTER, commandName, match.Groups[2].Value, lineNumber, line);
+                    return true;
                 default:
                     return false;
             }
         }
         return false;
+    }
+    private void CallSpawnEmitter(Script.OpCode opCode, string commandName, string matchGroup2, int lineNumber, string line)
+    {
+        var match = subCallRegex.Match(matchGroup2);
+        if (!match.Success)
+        {
+            Player.Error("Command ", commandName, " failed to parse on line ", lineNumber + 1, ": ", line);
+            return;
+        }
+        var subroutineName = match.Groups[1].Value.ToLower();
+        // Add it to the list of places the subroutine is being called at, so it can add the jump.
+        subroutineCalls.Add(new Tuple<int, string>(Script.instructions.Count, subroutineName));
+        var expression = new Expression();
+        expression.Parse("[" + match.Groups[2].Value + "]", [.. variableNames]);
+        Script.AddInstruction(opCode, lineNumber, expression);
     }
 
     private void ParseEnd(int lineNumber)
@@ -220,10 +227,10 @@ public partial class ScriptCompiler : Node
         Script.Initialize();
         var text = File.ReadAllText(filename);
         subroutineNames = FindSubroutines(text);
-        var lines = text.Split('\n');
-        for (var lineNumber = 0; lineNumber < lines.Length; ++lineNumber)
+        Script.lines = text.Split('\n');
+        for (var lineNumber = 0; lineNumber < Script.lines.Length; ++lineNumber)
         {
-            var line = lines[lineNumber].Trim();
+            var line = Script.lines[lineNumber].Trim();
             //Empty line
             if (line.Length == 0) continue;
             //Comment

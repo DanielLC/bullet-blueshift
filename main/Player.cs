@@ -81,7 +81,7 @@ public partial class Player : Node2D
             {
                 if (events[i].Item1 < curEvent)
                 {
-                    var newEvent = events[i].Item2.Run();
+                    var newEvent = events[i].Item2.RunEntity();
                     if (newEvent == null)
                     {
                         // If it's done, just move the last one here.
@@ -128,7 +128,7 @@ public partial class Player : Node2D
         entity.Initialize(instance, size, pointOfReference, rotationSpeed);
         instance.AddChild(entity);
         ScriptVM script = new(entity, instructionPointer, variables);
-        var e = script.Run();
+        var e = script.RunEntity();
         if (e != null)
             instance.events.Add(new Tuple<Event, ScriptVM>(e, script));
         return entity;

@@ -14,7 +14,7 @@ public partial class ScriptContext : RefCounted
     }
     public void accelerate(float acceleration, float angle, float time)
     {
-        entity.AddAcceleration(acceleration, angle * Mathf.Pi/180, time);
+        entity.AddAcceleration(acceleration, angle * Mathf.Pi / 180, time);
         scriptVM.timeToPause = true;
     }
     public void wait(float time)
@@ -42,10 +42,11 @@ public partial class ScriptContext : RefCounted
     public float floor(float x) => Mathf.Floor(x);
     public float ceil(float x) => Mathf.Ceil(x);
     public float round(float x) => Mathf.Round(x);
+    public float mod(float a, float b) => a % b;
     // Trig
-    public float sin(float x) => Mathf.Sin(x * Mathf.Pi/180);
-    public float cos(float x) => Mathf.Cos(x * Mathf.Pi/180);
-    public float tan(float x) => Mathf.Tan(x * Mathf.Pi/180);
+    public float sin(float x) => Mathf.Sin(x * Mathf.Pi / 180);
+    public float cos(float x) => Mathf.Cos(x * Mathf.Pi / 180);
+    public float tan(float x) => Mathf.Tan(x * Mathf.Pi / 180);
     public float asin(float x) => 180 / Mathf.Pi * Mathf.Asin(x);
     public float acos(float x) => 180 / Mathf.Pi * Mathf.Acos(x);
     public float atan(float x) => 180 / Mathf.Pi * Mathf.Atan(x);

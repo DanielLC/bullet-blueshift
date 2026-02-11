@@ -12,6 +12,10 @@ public partial class ScriptVM : RefCounted
     public bool timeToPause;
     public Entity entity;
     private ScriptContext context;
+    public int InstructionPointer
+    {
+        get => instructionPointer;
+    }
     public ScriptVM(Entity entity, int start = 0, Array vars = null)
     {
         instructionPointer = start;
@@ -28,7 +32,7 @@ public partial class ScriptVM : RefCounted
     // Runs the script until it reaches a point where it pauses or the script finishes.
     // If it reaches a pause, it returns entity.size before the final point of reference.
     // If it just returned the final event, then you'd have issues where the closer edge of the ship updates too late and seems to suddenly jump.
-    public Event Run()
+    public bool Run()
     {
         timeToPause = false;
         for (int _ = 0; _ < 256; ++_)
@@ -36,15 +40,14 @@ public partial class ScriptVM : RefCounted
             // For consistency's sake, it might be better to automatically end it with a DIE command and not need this.
             if (instructionPointer >= Script.instructions.Count)
             {
-                return null;
+                return false;
             }
             if (timeToPause)
             {
-                return entity.GetEndPOR() * new Event(0, 0, -entity.size);
+                return true;
             }
             var instruction = Script.instructions[instructionPointer];
-            // GD.Print("ScriptVM.Execute:", instruction.line);
-            // Debug.WriteLine("ScriptVM.Run(): Running command: " + instruction.opCode);
+            // GD.Print("ScriptVM.Run: ", instruction.opCode, ", ", instruction.line);
             // Use break if it's going to the next instruction, or continue if it's jumping.
             switch (instruction.opCode)
             {
@@ -66,15 +69,6 @@ public partial class ScriptVM : RefCounted
                     else
                         instructionPointer = instruction.b;
                     continue;
-                case Script.OpCode.SPAWN:
-                    {
-                        // TODO: It might be better to loop through this explicitly.
-                        Array newVars = variables[0..instruction.b].Duplicate(true);
-                        newVars.AddRange((Array)Execute(instruction));
-                        //GD.Print("ScriptVM.Run: ", string.Join(", ", newVars));
-                        Player.SpawnEntity(0.01f, 0, entity.GetEndPOR(), instruction.a, newVars);
-                        break;
-                    }
                 case Script.OpCode.GOSUB:
                     {
                         stack.Push(new StackElement(variables[instruction.b..], instruction.b, instructionPointer + 1));
@@ -84,11 +78,29 @@ public partial class ScriptVM : RefCounted
                         instructionPointer = instruction.a;
                         continue;
                     }
+                case Script.OpCode.SPAWN:
+                    {
+                        // TODO: It might be better to loop through this explicitly.
+                        Array newVars = variables[0..instruction.b].Duplicate(true);
+                        newVars.AddRange((Array)Execute(instruction));
+                        //GD.Print("ScriptVM.Run: ", string.Join(", ", newVars));
+                        Player.SpawnEntity(0.01f, 0, entity.GetEndPOR(), instruction.a, newVars);
+                        break;
+                    }
+                case Script.OpCode.EMITTER:
+                    {
+                        // TODO: It might be better to loop through this explicitly.
+                        Array newVars = variables[0..instruction.b].Duplicate(true);
+                        newVars.AddRange((Array)Execute(instruction));
+                        //GD.Print("ScriptVM.Run: ", string.Join(", ", newVars));
+                        entity.NewEmitter(instruction.a, newVars);
+                        break;
+                    }
                 case Script.OpCode.RETURN:
                     if (stack.Count == 0)
                     {
                         // If there's nothing in the stack, that means it was spawned as a bullet instead of called as a subroutine, so it's time to DIE.
-                        return null;
+                        return false;
                     }
                     else
                     {
@@ -98,20 +110,27 @@ public partial class ScriptVM : RefCounted
                         continue;
                     }
                 case Script.OpCode.DIE:
-                    return null;
+                    return false;
             }
             instructionPointer++;
         }
         Player.Error("Infinite loop containing line ", Script.instructions[instructionPointer].line);
-        return null;
+        return false;
+    }
+    public Event RunEntity()
+    {
+        if (Run())
+            return entity.GetEndPOR() * new Event(0, 0, -entity.size);
+        else
+            return null;
     }
     private Variant Execute(Script.Instruction instruction)
     {
-        GD.Print("ScriptVM.Execute: ", string.Join(", ", variables));
+        // GD.Print("ScriptVM.Execute: ", string.Join(", ", variables));
         Variant result = instruction.expression.Execute(variables, context);
         if (instruction.expression.HasExecuteFailed())
         {
-            Player.Error("Script execution failed on line ", instruction.line, " (Did you use an undeclared variable?): ", Script.instructions[instruction.line]);
+            Player.Error("Script execution failed on line ", instruction.line + 1, " (Did you use an undeclared variable?): ", Script.lines[instruction.line].Trim(), "\n", instruction.expression.GetErrorText());
         }
         return result;
     }

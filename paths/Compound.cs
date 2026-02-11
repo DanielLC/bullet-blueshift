@@ -14,6 +14,7 @@ public partial class Compound : Path
 	private ShaderMaterial shader;
 	private float rotationSpeed;
 	public bool dead;
+	public float EndTime => times[^1];
 
 	public Compound(ShaderMaterial shader, PointOfReference start, float rotationSpeed)
 	{

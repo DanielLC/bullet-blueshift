@@ -11,10 +11,11 @@ public partial class Script : RefCounted
         RUN,
         JUMP,   //Do I need this one? It might be better just to combine it with JUMP_IF.
         JUMP_IF,
-        SPAWN,
-        DIE,
         GOSUB,
+        SPAWN,
+        EMITTER,
         RETURN,
+        DIE,
         COUNT
     }
     public class Instruction(Script.OpCode opCode, int line, Expression expression, int a, int b)
@@ -37,4 +38,5 @@ public partial class Script : RefCounted
         //GD.Print("Script.AddInstruction: ", opCode, ", ", line);
         instructions.Add(new Instruction(opCode, line, expression, a, b));
     }
+    public static string[] lines;
 }
