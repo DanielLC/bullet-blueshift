@@ -6,7 +6,9 @@ subroutine attackPattern(x, z)
 	angle = 0
 	while true:
 		spawn missile(x, angle, z)
-		angle = mod(angle + goldenAngle, 360)
+		angle += goldenAngle
+		angle %= 360
+		#angle = mod(angle + goldenAngle, 360)
 		wait(0.1)
 	end
 end

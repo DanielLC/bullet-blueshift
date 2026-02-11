@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 
 public partial class ScriptCompiler : Node
 {
-    readonly Regex assignmentRegex = new(@"^\s*(?:([a-z_]\w*)\s*=\s*)?(.+)$", RegexOptions.IgnoreCase);  // [variable =]? expression
+    readonly Regex assignmentRegex = new(@"^\s*(?:([a-z_]\w*)\s*([+\-*/%]?)=\s*)?(.+)$", RegexOptions.IgnoreCase);  // [variable =]? expression
     readonly Regex commandRegex = new(@"^\s*(\w+)\s*(.*)$");              // command [expression]
     readonly Regex subCallRegex = new(@"^\s*(\w+)\s*\((.*)\)\s*$");
     readonly Regex subParamRegex = new(@"^\s*(\w+)\s*\(((?:[a-z_]\w*\s*,\s*)*[a-z_]\w*)\s*\)\s*$");
@@ -50,7 +50,16 @@ public partial class ScriptCompiler : Node
         {
             var varName = match.Groups[1].Value;
             var expression = new Expression();
-            var error = expression.Parse(match.Groups[2].Value, variableNames.ToArray());
+            var operation = match.Groups[2].Value;
+            var expressionText = match.Groups[3].Value;
+            if (operation != "")
+            {
+                if (operation == "%")
+                    expressionText = "mod(" + varName + "," + expressionText + ")";
+                else
+                    expressionText = varName + operation + "(" + expressionText + ")";
+            }
+            var error = expression.Parse(expressionText, [.. variableNames]);
             if (error != Error.Ok)
             {
                 Player.Error("Parsing error ", error, " on line ", lineNumber + 1, ": ", line);
@@ -62,13 +71,12 @@ public partial class ScriptCompiler : Node
             }
             else
             {
-                var name = match.Groups[1].Value;
-                var index = variableNames.IndexOf(name);
+                var index = variableNames.IndexOf(varName);
                 if (index == -1)
                 {
                     index = variableNames.Count;
-                    variableNames.Add(name);
-                    // Debug.WriteLine("ScriptCompiler.TryParseAssignment: New variable '" + name + "' at index " + index);
+                    variableNames.Add(varName);
+                    // Debug.WriteLine("ScriptCompiler.TryParseAssignment: New variable '" + varName + "' at index " + index);
                     Script.AddInstruction(Script.OpCode.VAR, lineNumber, expression, index);
                 }
                 else
@@ -78,13 +86,6 @@ public partial class ScriptCompiler : Node
             }
         }
         return match.Success;
-    }
-
-    private void ParseBasicInstruction(int lineNumber, Match match, Script.OpCode opCode)
-    {
-        Expression expression = new();
-        expression.Parse("[" + match.Groups[2].Value + "]");
-        Script.AddInstruction(opCode, lineNumber, expression);
     }
 
     private bool TryParseCommand(string line, int lineNumber)
