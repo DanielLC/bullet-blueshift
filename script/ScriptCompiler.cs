@@ -11,7 +11,7 @@ public partial class ScriptCompiler : Node
     readonly Regex assignmentRegex = new(@"^\s*(?:([a-z_]\w*)\s*([+\-*/%]?)=\s*)?(.+)$", RegexOptions.IgnoreCase);  // [variable =]? expression
     readonly Regex commandRegex = new(@"^\s*(\w+)\s*(.*)$");              // command [expression]
     readonly Regex subCallRegex = new(@"^\s*(\w+)\s*\((.*)\)\s*$");
-    readonly Regex subParamRegex = new(@"^\s*(\w+)\s*\(((?:[a-z_]\w*\s*,\s*)*[a-z_]\w*)\s*\)\s*$");
+    readonly Regex subParamRegex = new(@"^\s*(\w+)\s*\(((?:[a-z_]\w*\s*,\s*)*[a-z_]\w*)?\s*\)\s*$");
     readonly Regex subroutineRegex = new(@"^\s*SUBROUTINE\s+(\w+)", RegexOptions.IgnoreCase | RegexOptions.Multiline);   // name [parameter,]* [parameter]
     private List<string> variableNames = [];
     // I need a list of subroutine names so that it can detect when you're writing to a subroutine. Then I need to store a list of commands that jump to a subroutine and which one they're going to, and a dictionary of subroutines and their positions.
@@ -99,13 +99,13 @@ public partial class ScriptCompiler : Node
             {
                 case "if":
                     expression = new Expression();
-                    expression.Parse(match.Groups[2].Value, variableNames.ToArray());
+                    expression.Parse(match.Groups[2].Value, [.. variableNames]);
                     Script.AddInstruction(Script.OpCode.JUMP_IF, lineNumber, expression, Script.instructions.Count + 1);
                     stack.Push(new StackMemory(Jump.IF, Script.instructions.Count - 1, variableNames.Count));
                     return true;
                 case "while":
                     expression = new Expression();
-                    expression.Parse(match.Groups[2].Value, variableNames.ToArray());
+                    expression.Parse(match.Groups[2].Value, [.. variableNames]);
                     Script.AddInstruction(Script.OpCode.JUMP_IF, lineNumber, expression, Script.instructions.Count + 1);
                     stack.Push(new StackMemory(Jump.WHILE, Script.instructions.Count - 1, variableNames.Count));
                     return true;
@@ -137,12 +137,12 @@ public partial class ScriptCompiler : Node
                             return true;
                         }
                         var subroutineName = match.Groups[1].Value.ToLower();
-                        var parameters = match.Groups[2].Value.Split(",", StringSplitOptions.TrimEntries);
+                        var parameters = match.Groups[2].Value.Split(",", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
                         subroutineData.Add(subroutineName, new Tuple<int, int>(Script.instructions.Count, variableNames.Count));
                         // This has a new scope, so push it to the stack.
                         stack.Push(new StackMemory(Jump.SUBROUTINE, Script.instructions.Count - 1, variableNames.Count));
                         variableNames.AddRange(parameters);
-                        GD.Print("ScriptCompiler.TryParseCommand: subroutine ", subroutineName, " ", string.Join(", ", parameters));
+                        //GD.Print("ScriptCompiler.TryParseCommand: subroutine ", subroutineName, " ", string.Join(", ", parameters));
                         return true;
                     }
                 case "call":
@@ -154,12 +154,16 @@ public partial class ScriptCompiler : Node
                 case "emitter":
                     CallSpawnEmitter(Script.OpCode.EMITTER, commandName, match.Groups[2].Value, lineNumber, line);
                     return true;
+                case "return":
+                    Script.AddInstruction(Script.OpCode.RETURN, lineNumber);
+                    return true;
                 default:
                     return false;
             }
         }
         return false;
     }
+    // This really needs a different name.
     private void CallSpawnEmitter(Script.OpCode opCode, string commandName, string matchGroup2, int lineNumber, string line)
     {
         var match = subCallRegex.Match(matchGroup2);
@@ -173,6 +177,7 @@ public partial class ScriptCompiler : Node
         subroutineCalls.Add(new Tuple<int, string>(Script.instructions.Count, subroutineName));
         var expression = new Expression();
         expression.Parse("[" + match.Groups[2].Value + "]", [.. variableNames]);
+        //GD.Print("ScriptCompiler.CallSpawnEmitter: ", lineNumber + 1, ", ", "[" + match.Groups[2].Value + "]");
         Script.AddInstruction(opCode, lineNumber, expression);
     }
 
@@ -211,7 +216,7 @@ public partial class ScriptCompiler : Node
         {
             subroutineNames[i] = matches[i].Groups[1].Value;
         }
-        GD.Print("ScriptCompiler.FindSubroutines: " + String.Join(", ", subroutineNames));
+        //GD.Print("ScriptCompiler.FindSubroutines: " + String.Join(", ", subroutineNames));
         return subroutineNames;
     }
 
@@ -231,6 +236,7 @@ public partial class ScriptCompiler : Node
         Script.lines = text.Split('\n');
         for (var lineNumber = 0; lineNumber < Script.lines.Length; ++lineNumber)
         {
+            //GD.Print("ScriptCompiler.ParseFile ", lineNumber+1, ", ", variableNames.Count, ": ", string.Join(", ", variableNames));
             var line = Script.lines[lineNumber].Trim();
             //Empty line
             if (line.Length == 0) continue;
@@ -245,7 +251,7 @@ public partial class ScriptCompiler : Node
         SubroutineFinalPass();
         if (stack.Count > 0)
         {
-            throw new Exception("Script is missing END command");
+            Player.Error("Script is missing END command");  //I wish I could say where, but that's not really possible.
         }
     }
 }

@@ -1,20 +1,10 @@
 Doing:
 
-Emitters
 
-Each Entity should have a Heap of emitters, tracking which one needs to be updated. Whenever the Entity's Path is added to, it goes through the Heap and checks if any of them are ready to run.
-
-With an Entity, ScriptVM.Run() returns the Event for when it needs to next be updated. An Emitter would instead need to return a float.
-
-It's returned in
-			if (timeToPause)
-			{
-				return entity.GetEndPOR() * new Event(0, 0, -entity.size);
-			}
-I could just change it to return a bool (true if it's still there, and falls if it was destroyed), and have a separate function get the next part. Then have the Player run that for Entities, but for Emitters, the Entity that runs it just gets the time.
 
 TODO:
 
+If a subroutine shares a variable name with a global, it uses the global variable instead of the local one. Fix this, or at least make an error if you try it.
 Make it so variables need to be explicitly declared, so typos will be more obvious
 Make it so you can load sprites instead of just the built in one
 Collisions

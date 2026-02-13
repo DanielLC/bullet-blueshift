@@ -13,7 +13,7 @@ public partial class Player : Node2D
 
     public PointOfReference por;
     private static readonly PackedScene EntityScene = (PackedScene)ResourceLoader.Load("res://main/Entity.tscn");
-    //private Entity entity;    //This was representing the player. The game is not ready for it and it's probably overkill.
+    private Entity entity;    //This was representing the player. The game is not ready for it and it's probably overkill.
     private static Player instance;
 
     public Player()
@@ -30,9 +30,10 @@ public partial class Player : Node2D
             sprite.Scale /= 128;
 
             por = PointOfReference.IDENTITY;
-            //entity = SpawnEntity(PLAYER_SIZE, PLAYER_ROTATION);
 
             ScriptedLevel();
+            entity = SpawnEntity(PLAYER_SIZE, PLAYER_ROTATION, por, -1);
+            entity.NewEmitter(0, []);
 
         }
         catch (Exception e)
@@ -46,34 +47,24 @@ public partial class Player : Node2D
     private void ScriptedLevel()
     {
         new ScriptCompiler().ParseFile("script.txt");
-        var enemy = SpawnEntity(0.1f, 0f, new Event(0, 0.2f, 0.3f).GetTranslation());
+        //var enemy = SpawnEntity(0.1f, 0f, new Event(0, 0.2f, 0.3f).GetTranslation());
     }
 
     public override void _Process(double delta)
     {
         try
         {
-            //GD.Print($"FPS: {1 / delta}");
+            //GD.Print($"Player._Process: FPS: {1 / delta}");
             float deltaF = (float)delta;
             //var viewportSize = GetViewportRect().Size;
             //Position = viewportSize / 2;
             //Scale = Mathf.Min(viewportSize.X, viewportSize.Y) * SCALE * Vector2.One;
             var x = Input.GetActionStrength("ui_right") - Input.GetActionStrength("ui_left");
             var y = Input.GetActionStrength("ui_down") - Input.GetActionStrength("ui_up");
-            //entity.AddAcceleration(Mathf.Sqrt(x*x + y*y) * ACCELERATION, Mathf.Atan2(-x, y), deltaF);
-            //por = entity.GetEndPOR();
+            entity.AddAcceleration(Mathf.Sqrt(x * x + y * y) * ACCELERATION, Mathf.Atan2(-x, y), deltaF);
+            por = entity.GetEndPOR();
             var dir = new Vector2(x, y).Normalized() * deltaF * ACCELERATION;
             var v = Velocity.FromRapidity(dir.X, dir.Y);
-            //por *= new PointOfReference(new Event(0, 0, deltaF), v);
-            por *= v.GetLorentz();
-            por *= new Event(0, 0, deltaF).GetTranslation();
-            //I'm pretty sure this does it in the opposite order I'd like
-            //(it moves you forward in time, then accelerates, so it's less responsive),
-            //but ultimately I'd like to change it to proper hyperbolic motion.
-            //por = por.times(PointOfReference.from_event_and_velocity(Event.new(0,0,delta), Velocity.from_rapidity(dir.x, dir.y)))
-            //por = PointOfReference.from_event_and_velocity(Event.new(0,0,delta), Velocity.from_rapidity(dir.x, dir.y)).times(por)
-            //por = por.Accelerate(v)
-            //por = por.Wait(delta)
             por.RecalculateInverse();   //I probably don't have to do this every time, but I'll do it for now.
 
             var curEvent = por.GetEvent();
@@ -117,7 +108,7 @@ public partial class Player : Node2D
 
     public static Entity SpawnEntity(float size, float rotationSpeed, PointOfReference pointOfReference, int instructionPointer = 0, Godot.Collections.Array variables = null)
     {
-        if(instance.GetChildCount() >= SPAWN_CAP)
+        if (instance.GetChildCount() >= SPAWN_CAP)
         {
             // There's too many bullets. Stop spawning them.
             // This should probably be logged somehow? But if there's too many bullets, it's probably going to be a lot too many. Maybe just count the number?
@@ -127,22 +118,15 @@ public partial class Player : Node2D
         Entity entity = (Entity)EntityScene.Instantiate();
         entity.Initialize(instance, size, pointOfReference, rotationSpeed);
         instance.AddChild(entity);
-        ScriptVM script = new(entity, instructionPointer, variables);
-        var e = script.RunEntity();
-        if (e != null)
-            instance.events.Add(new Tuple<Event, ScriptVM>(e, script));
+        if (instructionPointer > -1)
+        {
+            ScriptVM script = new(entity, instructionPointer, variables);
+            var e = script.RunEntity();
+            if (e != null)
+                instance.events.Add(new Tuple<Event, ScriptVM>(e, script));
+        }
         return entity;
     }
-
-    /*private Entity SpawnEntity(float size, float rotationSpeed)
-    {
-        return SpawnEntity(size, rotationSpeed, PointOfReference.IDENTITY);
-    }
-
-    private Entity SpawnEntity()
-    {
-        return SpawnEntity(0.1f, 1f, PointOfReference.IDENTITY);
-    }*/
 
     public static void Error(params object[] args)
     {

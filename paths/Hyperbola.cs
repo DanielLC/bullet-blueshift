@@ -66,7 +66,8 @@ public partial class Hyperbola : Path
         GD.Print($"c = {c}");*/
         if (d < 0)
         {
-            GD.Print($"d = {d} < 0");
+            //if (d < -1e-4)
+            //    GD.Print($"Hyperbola.FindConeIntersectionT: d = {d} < 0");
             //return float.NaN;
             return -b / (2 * a);
         }

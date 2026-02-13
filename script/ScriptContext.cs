@@ -5,12 +5,14 @@ public partial class ScriptContext : RefCounted
 {
     private static RandomNumberGenerator rng = new();
     private Entity entity;
+    private ulong entityId;
     private ScriptVM scriptVM;
     //This part is just ScriptContext. Emitters can't accelerate.
     public ScriptContext(ScriptVM scriptVM)
     {
         this.scriptVM = scriptVM;
-        this.entity = scriptVM.entity;
+        entity = scriptVM.entity;
+        entityId = entity.GetInstanceId();
     }
     public void accelerate(float acceleration, float angle, float time)
     {

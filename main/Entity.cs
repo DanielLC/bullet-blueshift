@@ -8,22 +8,45 @@ public partial class Entity : Node2D
 	private Player player;
 	private ShaderMaterial shader;
 	public float size;
-	private EmitterHeap emitters = new();
+	private readonly EmitterHeap emitters = new();
 	public Entity baseEntity;
 	virtual public float Time => path.EndTime;
 
-	public Emitter NewEmitter(int instructionPointer, Godot.Collections.Array variables)
+	virtual public void NewEmitter(int instructionPointer, Godot.Collections.Array variables)
 	{
 		//TODO: Check for too many emitters.
 		Emitter emitter = new(this);
+		//GD.Print("Entity.NewEmitter: ", instructionPointer, "/", Script.instructions.Count, ", ", emitter.GetInstanceId());
 		ScriptVM script = new(emitter, instructionPointer, variables);
-		emitters.Push(0, script);
-		UpdateEmitters();
-		return emitter;
+		// These next two lines should be a little less efficient but a lot simpler than this big thing that comes after.
+		// But they don't work and I can't figure out why.
+		// Maybe the longer part doesn't work either and I just haven't noticed yet.
+		//emitters.Push(0, script);
+		//UpdateEmitters();
+		
+		for (int _ = 0; _ < 256; ++_)
+		{
+			//GD.Print("Entity.NewEmitter ", emitter.Time);
+			if (!script.Run())
+			{
+				GD.Print("Entity.NewEmitter: Emmitter ", emitter.GetInstanceId(), ", died immediately (why?)");
+				// If it hits the end before anything happened, destroy it.
+				emitter.QueueFree();
+				GD.Print("Entity.NewEmitter: Is the emitter being deleted? ", emitter.IsQueuedForDeletion());
+				return;
+			}
+			if (emitter.Time > 0)
+			{
+				emitters.Push(emitter.Time, script);
+				return;
+			}
+		}
+		Player.Error("Emitter got into an infinite loop containing line ", emitters.Peek().emitter.InstructionPointer + 1, " on creation");
 	}
 
 	virtual public void UpdateEmitters()
 	{
+		//GD.Print("Entity.UpdateEmitters");
 		if (emitters.IsEmpty)
 			return;
 		for (int _ = 0; _ < 256; ++_)
@@ -43,12 +66,13 @@ public partial class Entity : Node2D
 				// If it's not running anymore, destroy the emitter.
 				emitters.Pop();
 				emitter.entity.QueueFree();
+				GD.Print("Entity.UpdateEmitters: Emmitter died");
 			}
 			//GD.Print("Entity.UpdateEmitters: ", emitter.entity.Time);
 			if (emitters.IsEmpty)
 				return;
 		}
-		Player.Error("Infinite emitter loop containing line ", emitters.Peek().emitter.InstructionPointer);
+		Player.Error("Infinite emitter loop containing line ", emitters.Peek().emitter.InstructionPointer + 1);
 	}
 
 	public PointOfReference PointOfReferenceAtTime(float s)
