@@ -1,6 +1,8 @@
 using Godot;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Runtime.CompilerServices;
 
 public partial class Entity : Node2D
 {
@@ -11,6 +13,12 @@ public partial class Entity : Node2D
 	private readonly EmitterHeap emitters = new();
 	public Entity baseEntity;
 	virtual public float Time => path.EndTime;
+	private static readonly Dictionary<string, Texture2D> textureCache = [];
+
+	public void Translate(Event e)
+	{
+		path.Translate(e);
+	}
 
 	virtual public void NewEmitter(int instructionPointer, Godot.Collections.Array variables)
 	{
@@ -23,7 +31,7 @@ public partial class Entity : Node2D
 		// Maybe the longer part doesn't work either and I just haven't noticed yet.
 		//emitters.Push(0, script);
 		//UpdateEmitters();
-		
+
 		for (int _ = 0; _ < 256; ++_)
 		{
 			//GD.Print("Entity.NewEmitter ", emitter.Time);
@@ -41,7 +49,7 @@ public partial class Entity : Node2D
 				return;
 			}
 		}
-		Player.Error("Emitter got into an infinite loop containing line ", emitters.Peek().emitter.InstructionPointer + 1, " on creation");
+		Player.Error(emitters.Peek().emitter.InstructionPointer, "Emitter got into an infinite loop containing this line on creation.");
 	}
 
 	virtual public void UpdateEmitters()
@@ -66,13 +74,12 @@ public partial class Entity : Node2D
 				// If it's not running anymore, destroy the emitter.
 				emitters.Pop();
 				emitter.entity.QueueFree();
-				GD.Print("Entity.UpdateEmitters: Emmitter died");
 			}
 			//GD.Print("Entity.UpdateEmitters: ", emitter.entity.Time);
 			if (emitters.IsEmpty)
 				return;
 		}
-		Player.Error("Infinite emitter loop containing line ", emitters.Peek().emitter.InstructionPointer + 1);
+		Player.Error(emitters.Peek().emitter.InstructionPointer, "Code entered an infinite loop containing this line.");
 	}
 
 	public PointOfReference PointOfReferenceAtTime(float s)
@@ -102,6 +109,43 @@ public partial class Entity : Node2D
 	public void Initialize(Player player, float size, float rotationSpeed)
 	{
 		Initialize(player, size, PointOfReference.IDENTITY, rotationSpeed);
+	}
+	//Note: This can be used to pre-load a texture.
+	public static Texture2D GetTexture(string path, int lineNumber)
+	{
+		if (!textureCache.TryGetValue(path, out var texture))
+		{
+			var absPath = "res://".PathJoin(path);
+			texture = (Texture2D)GD.Load(absPath);
+			if (texture == null)
+			{
+				var fullPath = ProjectSettings.GlobalizePath(absPath);
+				//TODO: Give the full error.
+				//It needs the line number too. Should I pass that in?
+				Player.Error(lineNumber, $"No texture found at'{fullPath}'.");
+			}
+			textureCache.Add(path, texture);
+		}
+		return texture;
+	}
+
+	// Maybe I should just make this work on Emitters. There are better ways to make ships with multiple spinning sprites, but until I add that, this is easy.
+	public void SetParameters(string spritePath, float size, float rotationSpeed, int lineNumber)
+	{
+		var sprite = GetNode<MeshInstance2D>("MeshInstance2D");
+		if (sprite != null && sprite.Material is ShaderMaterial mat)
+		{
+			shader.SetShaderParameter("texture_sampler", GetTexture(spritePath, lineNumber));
+			shader.SetShaderParameter("size", size);
+			shader.SetShaderParameter("spin_speed", rotationSpeed);
+			sprite.Scale = new Vector2(size, size) * 4;
+			this.size = size;
+			path.rotationSpeed = rotationSpeed;
+		}
+		else
+		{
+			Player.Error(lineNumber, "SetParameters() called on an Emitter. Emitters don't have sprites.");
+		}
 	}
 
 	public void Update()

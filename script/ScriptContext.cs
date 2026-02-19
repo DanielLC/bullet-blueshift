@@ -5,15 +5,21 @@ public partial class ScriptContext : RefCounted
 {
     private static RandomNumberGenerator rng = new();
     private Entity entity;
-    private ulong entityId;
     private ScriptVM scriptVM;
-    //This part is just ScriptContext. Emitters can't accelerate.
     public ScriptContext(ScriptVM scriptVM)
     {
         this.scriptVM = scriptVM;
         entity = scriptVM.entity;
-        entityId = entity.GetInstanceId();
     }
+    public void displace(float r, float theta, float t)
+    {
+        entity.Translate(new Event(r*cos(theta), r*sin(theta), t));
+    }
+    public void setParameters(string sprite, float size, float rotationSpeed)
+    {
+        entity.SetParameters(sprite, size, rotationSpeed, scriptVM.InstructionPointer);
+    }
+    //This part is just ScriptContext. Emitters can't accelerate.
     public void accelerate(float acceleration, float angle, float time)
     {
         entity.AddAcceleration(acceleration, angle * Mathf.Pi / 180, time);

@@ -128,9 +128,12 @@ public partial class Player : Node2D
         return entity;
     }
 
-    public static void Error(params object[] args)
+    public static void Error(int lineNumber, string message)
     {
-        GD.Print("ERROR: ", string.Join("", args));
+        if (lineNumber < 0)
+            GD.Print($"ERROR: {message}");
+        else
+            GD.Print($"ERROR on line {lineNumber + 1}: {Script.lines[lineNumber].Trim()}\n{message}");
         instance.GetTree().Quit();
         //instance.GetTree().Paused = true;
     }

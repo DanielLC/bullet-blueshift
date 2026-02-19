@@ -4,9 +4,17 @@ Doing:
 
 TODO:
 
+Necessary for pre-alpha:
+
+Make it so you can set the sprite and size of spawned objects, and change their position (letting you spawn enemies off screen).
+Make it so you can load sprites instead of just the built in one
+Make errors not require the console to see.
+Put it on itch.io.
+
+Other:
+
 If a subroutine shares a variable name with a global, it uses the global variable instead of the local one. Fix this, or at least make an error if you try it.
 Make it so variables need to be explicitly declared, so typos will be more obvious
-Make it so you can load sprites instead of just the built in one
 Collisions
 Make it so enemies can have multiple overlapping sprites spinning at different rates
 Separate compound_shader into shader include files
@@ -14,8 +22,8 @@ Elif statements
 Make it so you can print messages on the screen. Players won't want to use the console, and ideally it could allow dialogue.
 Circular screen
 
-Notes:
+Allowing fields in scripts:
 
-I made it so the player is controlling an Entity, which lets you see relativistic effects on your own ship. But I don't think the game is ready for this. I have to make sure it properly removes parts of it in the past, and I shouldn't have it make a new one on every frame. Easy enough problem to fix on a PC, but not something analogue.
+This is something I want to add later. It would be nice to use it to modify properties of the bullet rather than built in variables or functions. ChatGPT tells me I can use Object.Set() when setting properties on the left side, and override Object._Set() in EntityProperties (which I will make for this purpose) so it can tell me when a property has been updated and make sure the game reflects that.
 
-Also, it is unnecessary. I will need to track the player's past somehow when I want enemies to shoot at where you were, but for drawing your sprite, unless it's huge the different sections where you moved differently aren't noticeable. Just keep it simple and draw it based on how you're currently accelerating.
+Now that I have a good way going forward, I'm going to just make a ScriptContext.setProperties() function. If I add more properties to set it can get unwieldly, but if I have better method in the future, I don't have to worry yet.

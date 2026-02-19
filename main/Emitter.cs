@@ -4,6 +4,8 @@ using System;
 public partial class Emitter : Entity
 {
 	private float time;
+	// TODO: Overload GetEndPOR() to multiply by rotation. Then you can rotate Emitters to change what direction spawned bullets go.
+	// private PointOfReference rotation = PointOfReference.IDENTITY;
 	override public float Time => time;
 	override public void AddAcceleration(float accel, float radians, float time)
 	{

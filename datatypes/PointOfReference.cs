@@ -65,6 +65,11 @@ public class PointOfReference
         return new PointOfReference(a.xform * b.xform, b.inverse * a.inverse);
     }
 
+    public static Vector4 operator*(Vector4 a, PointOfReference b)
+    {
+        return a * b.xform;
+    }
+
     public static Event operator*(PointOfReference por, Event e) {
         return new Event(por.xform * e.ToVector());
     }

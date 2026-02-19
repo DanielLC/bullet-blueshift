@@ -8,11 +8,12 @@ using System.Text.RegularExpressions;
 
 public partial class ScriptCompiler : Node
 {
-    readonly Regex assignmentRegex = new(@"^\s*(?:([a-z_]\w*)\s*([+\-*/%]?)=\s*)?(.+)$", RegexOptions.IgnoreCase);  // [variable =]? expression
+    readonly Regex assignmentRegex = new(@"^\s*(?:([a-zA-Z_]\w*)\s*([+\-*/%]?)=\s*)?(.+)$");  // [variable =]? expression
     readonly Regex commandRegex = new(@"^\s*(\w+)\s*(.*)$");              // command [expression]
     readonly Regex subCallRegex = new(@"^\s*(\w+)\s*\((.*)\)\s*$");
     readonly Regex subParamRegex = new(@"^\s*(\w+)\s*\(((?:[a-z_]\w*\s*,\s*)*[a-z_]\w*)?\s*\)\s*$");
     readonly Regex subroutineRegex = new(@"^\s*SUBROUTINE\s+(\w+)", RegexOptions.IgnoreCase | RegexOptions.Multiline);   // name [parameter,]* [parameter]
+    readonly Regex variableNameRegex = new(@"^[a-zA-Z_]\w*$");
     private List<string> variableNames = [];
     // I need a list of subroutine names so that it can detect when you're writing to a subroutine. Then I need to store a list of commands that jump to a subroutine and which one they're going to, and a dictionary of subroutines and their positions.
     private string[] subroutineNames = [];
@@ -62,7 +63,7 @@ public partial class ScriptCompiler : Node
             var error = expression.Parse(expressionText, [.. variableNames]);
             if (error != Error.Ok)
             {
-                Player.Error("Parsing error ", error, " on line ", lineNumber + 1, ": ", line);
+                Player.Error(lineNumber, $"Expression failed to parse.");
                 return true;
             }
             if (varName == "")
@@ -114,7 +115,7 @@ public partial class ScriptCompiler : Node
                     variableNames.RemoveRange(memory.variableCount, variableNames.Count - memory.variableCount);
                     if (memory.command != Jump.IF)
                     {
-                        Player.Error("Error on line ", lineNumber + 1, ": else command outside of if statement.");
+                        Player.Error(lineNumber, $"ELSE command outside of IF statement.");
                         return true;
                     }
                     // Add a JUMP, which will be redirected to the next END.
@@ -133,11 +134,21 @@ public partial class ScriptCompiler : Node
                         match = subParamRegex.Match(match.Groups[2].Value);
                         if (!match.Success)
                         {
-                            Player.Error("Subroutine definition failed to parse on line ", lineNumber + 1, ": ", line);
+                            Player.Error(lineNumber, $"Subroutine definition failed to parse.");
                             return true;
                         }
                         var subroutineName = match.Groups[1].Value.ToLower();
                         var parameters = match.Groups[2].Value.Split(",", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+                        foreach (var parameter in parameters)
+                        {
+                            if(variableNames.Contains(parameter)) {
+                                Player.Error(lineNumber, $"Variable {parameter} has already been defined. This language does not currently support shadowing.");
+                            }
+                            if (!variableNameRegex.IsMatch(parameter))
+                            {
+                                Player.Error(lineNumber, $"'{parameter}' is not a valid variable name.");
+                            }
+                        }
                         subroutineData.Add(subroutineName, new Tuple<int, int>(Script.instructions.Count, variableNames.Count));
                         // This has a new scope, so push it to the stack.
                         stack.Push(new StackMemory(Jump.SUBROUTINE, Script.instructions.Count - 1, variableNames.Count));
@@ -169,7 +180,7 @@ public partial class ScriptCompiler : Node
         var match = subCallRegex.Match(matchGroup2);
         if (!match.Success)
         {
-            Player.Error("Command ", commandName, " failed to parse on line ", lineNumber + 1, ": ", line);
+            Player.Error(lineNumber, $"Command {commandName} failed to parse.");
             return;
         }
         var subroutineName = match.Groups[1].Value.ToLower();
@@ -246,12 +257,12 @@ public partial class ScriptCompiler : Node
             else if (TryParseCommand(line, lineNumber)) continue;
             //Assignment (variableName = <Expression>)
             else if (TryParseAssignment(line, lineNumber)) continue;
-            else Player.Error("Line ", lineNumber + 1, " failed to parse: ", line);
+            else Player.Error(lineNumber, "Failed to parse.");
         }
         SubroutineFinalPass();
         if (stack.Count > 0)
         {
-            Player.Error("Script is missing END command");  //I wish I could say where, but that's not really possible.
+            Player.Error(-1, "Script is missing END command");  //I wish I could say where, but that's not really possible.
         }
     }
 }

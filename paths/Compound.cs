@@ -12,7 +12,7 @@ public partial class Compound : Path
 	private List<Vector4> coevents;
 	private List<PointOfReference> endPORs;
 	private ShaderMaterial shader;
-	private float rotationSpeed;
+	public float rotationSpeed;
 	public bool dead;
 	public float EndTime => times[^1];
 
@@ -26,6 +26,35 @@ public partial class Compound : Path
 		coevents = [GetCoevent(start)];
 		dead = false;
 		this.rotationSpeed = rotationSpeed;
+	}
+
+	// TODO: Test
+	private void Transform(PointOfReference transform)
+	{
+		endPORs[^1] = endPORs[^1] * transform;
+		events[^1] = endPORs[^1].GetEvent();
+		coevents[^1] = GetCoevent(endPORs[^1]);
+	}
+
+	public void Translate(Event offset)
+	{
+		// TODO: Error if it's not at the beginning. Maybe with all of them?
+		Transform(offset.GetTranslation());
+	}
+
+	public void Boost(Velocity velocity)
+	{
+		Transform(velocity.GetLorentz());
+	}
+
+	public void Rotate(float radians)
+	{
+		Transform(PointOfReference.FromRotation(radians));
+	}
+
+	public bool IsEmpty()
+	{
+		return components.Count == 0;
 	}
 
 	public Compound(ShaderMaterial shader, float rotationSpeed) : this(shader, PointOfReference.IDENTITY, rotationSpeed) { }

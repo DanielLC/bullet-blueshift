@@ -16,6 +16,8 @@ subroutine attackPattern(x, y, z)
 end
 
 subroutine enemy()
+	setParameters("star.png", 0.1, 2)
+	displace(0, 0.3, 0.3)
 	a = 0.2
 	emitter attackPattern(0.2,10,2)
 	angle = 0
@@ -29,7 +31,20 @@ subroutine enemy()
 	end
 end
 
-spawn enemy()
+
+subroutine offsetShot(x)
+	displace(0.3, 0, -0.3)
+	accelerate(0.2, x, 2)
+end
+
+angle = 0
+while true:
+	spawn offsetShot(angle)
+	angle += 5
+	angle %= 360
+	wait(0.1)
+end
+#spawn enemy()
 #emitter attackPattern(0.2,5,2)
 #emitter attackPattern(0.2,-5,2)
 #spawn missile(0.2,0,10)

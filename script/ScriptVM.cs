@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using Godot;
 using Godot.Collections;
+using System.Text.RegularExpressions;
 
 public partial class ScriptVM : RefCounted
 {
@@ -12,6 +13,7 @@ public partial class ScriptVM : RefCounted
     public bool timeToPause;
     public Entity entity;
     private ScriptContext context;
+    private Regex missingVariableRegex = new(@"Invalid named index '(\w*)' for base type Object");
     public int InstructionPointer
     {
         get => instructionPointer;
@@ -118,7 +120,7 @@ public partial class ScriptVM : RefCounted
             }
             instructionPointer++;
         }
-        Player.Error("Infinite loop containing line ", Script.instructions[instructionPointer].line);
+        Player.Error(Script.instructions[instructionPointer].line, "Infinite loop encountered containing this line.");
         return false;
     }
     public Event RunEntity()
@@ -134,7 +136,11 @@ public partial class ScriptVM : RefCounted
         Variant result = instruction.expression.Execute(variables, context);
         if (instruction.expression.HasExecuteFailed())
         {
-            Player.Error("Script execution failed on line ", instruction.line + 1, " (Did you use an undeclared variable?): ", Script.lines[instruction.line].Trim(), "\n", instruction.expression.GetErrorText());
+            var errorText = instruction.expression.GetErrorText();
+            var match = missingVariableRegex.Match(errorText);
+            if(match.Success)
+                errorText = $"Variable '{match.Groups[1].Value}' not defined.";
+            Player.Error(instruction.line, errorText);
         }
         //GD.Print("ScriptVM.Execute result: ", result);
         return result;
