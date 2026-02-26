@@ -4,6 +4,8 @@ using System.Collections.Generic;
 
 public partial class Script : RefCounted
 {
+    public static List<Instruction> instructions;
+    public static string[] lines;
     public enum OpCode : byte
     {      
         VAR,
@@ -27,16 +29,14 @@ public partial class Script : RefCounted
         public Expression expression = expression;
 
     }
-    public static List<Instruction> instructions;
 
     public static void Initialize()
     {
-        instructions ??= [];
+        instructions = [];
     }
     public static void AddInstruction(OpCode opCode, int line, Expression expression = null, int a = 0, int b = 0)
     {
         //GD.Print("Script.AddInstruction: ", opCode, ", ", line);
         instructions.Add(new Instruction(opCode, line, expression, a, b));
     }
-    public static string[] lines;
 }

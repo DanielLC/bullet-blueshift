@@ -1,3 +1,5 @@
+#asdf
+
 subroutine missile(x, y, z)
 	accelerate(x, y, z)
 end

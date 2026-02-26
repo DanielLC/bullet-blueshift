@@ -25,9 +25,9 @@ public partial class Player : Node2D
     {
         try
         {
-            Sprite2D sprite = GetNode<Sprite2D>("Sprite2D");
+            //Sprite2D sprite = GetNode<Sprite2D>("Sprite2D");
             //sprite.ZIndex = 1;
-            sprite.Scale /= 128;
+            //sprite.Scale /= 128;
 
             por = PointOfReference.IDENTITY;
 
@@ -38,9 +38,8 @@ public partial class Player : Node2D
         }
         catch (Exception e)
         {
-            Debug.WriteLine("ERROR!");
-            GD.PushError(e.ToString());
-            GetTree().Paused = true; // or GetTree().Quit();
+            CallDeferred("CatchError", [e.Message]);
+            //CatchError(e);
         }
     }
 
@@ -101,8 +100,7 @@ public partial class Player : Node2D
         }
         catch (Exception e)
         {
-            GD.PushError(e.ToString());
-            GetTree().Paused = true; // or GetTree().Quit();
+            CallDeferred("CatchError", [e.Message]);
         }
     }
 
@@ -131,10 +129,58 @@ public partial class Player : Node2D
     public static void Error(int lineNumber, string message)
     {
         if (lineNumber < 0)
-            GD.Print($"ERROR: {message}");
+            message = $"ERROR: {message}";
         else
-            GD.Print($"ERROR on line {lineNumber + 1}: {Script.lines[lineNumber].Trim()}\n{message}");
-        instance.GetTree().Quit();
-        //instance.GetTree().Paused = true;
+            message = $"ERROR on line {lineNumber + 1}: {Script.lines[lineNumber].Trim()}\n{message}";
+        throw new Exception(message);
+    }
+
+    private void CatchError(string errorText)
+    {
+        Debug.WriteLine($"Catching error: {errorText}");
+        //var errorText = e.Message;
+
+        var window = new Window();
+        window.Title = "Script Error";
+        window.Size = new Vector2I(500, 500);
+        window.ProcessMode = Node.ProcessModeEnum.Always;
+
+        var vbox = new VBoxContainer();
+        vbox.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        vbox.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        vbox.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+
+        var text = new TextEdit();
+        text.Text = errorText;
+        text.Editable = false;
+        text.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        text.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+
+        var buttons = new HBoxContainer();
+
+        var reload = new Button { Text = "Reload" };
+        reload.Pressed += () =>
+        {
+            // window.QueueFree();
+            // GetTree().Paused = false;
+            // GetTree().ChangeSceneToFile("res://Player.tscn");
+            
+            OS.CreateProcess(OS.GetExecutablePath(), new string[] { });
+            GetTree().Quit();
+        };
+
+        var quit = new Button { Text = "Quit" };
+        quit.Pressed += () => GetTree().Quit();
+
+        buttons.AddChild(reload);
+        buttons.AddChild(quit);
+
+        vbox.AddChild(text);
+        vbox.AddChild(buttons);
+        window.AddChild(vbox);
+
+        GetTree().Root.AddChild(window);
+        GetTree().Paused = true;
+        window.PopupCentered();
     }
 }

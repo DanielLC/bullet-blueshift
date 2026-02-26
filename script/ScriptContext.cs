@@ -11,18 +11,18 @@ public partial class ScriptContext : RefCounted
         this.scriptVM = scriptVM;
         entity = scriptVM.entity;
     }
-    public void displace(float r, float theta, float t)
+    public void displace(float r, float degrees, float time)
     {
-        entity.Translate(new Event(r*cos(theta), r*sin(theta), t));
+        entity.Translate(new Event(r*cos(degrees), r*sin(degrees), time));
     }
     public void setParameters(string sprite, float size, float rotationSpeed)
     {
         entity.SetParameters(sprite, size, rotationSpeed, scriptVM.InstructionPointer);
     }
     //This part is just ScriptContext. Emitters can't accelerate.
-    public void accelerate(float acceleration, float angle, float time)
+    public void accelerate(float acceleration, float degrees, float time)
     {
-        entity.AddAcceleration(acceleration, angle * Mathf.Pi / 180, time);
+        entity.AddAcceleration(acceleration, degrees * Mathf.Pi / 180, time);
         scriptVM.timeToPause = true;
     }
     public void wait(float time)
