@@ -48,7 +48,7 @@ public partial class Hyperbola : Path
         if (e.t <= -e.y)
         {
             // This comes up if you're trying to draw something before any of the light it ever emitted would reach you (which is possible because of constant acceleration).
-            GD.Print("Hyperbola.FindConeIntersectionT: e.t <= -e.y");
+            //GD.Print("Hyperbola.FindConeIntersectionT: e.t <= -e.y");
             return float.NaN;
         }
         var u = e.y;
@@ -76,12 +76,12 @@ public partial class Hyperbola : Path
         return t;
     }
 
-    public override PointOfReference SeenFromRest(Event e)
+    public override (PointOfReference, float) SeenFromRest(Event e)
     {
         var t = FindConeIntersectionT(e, +1);
         if (float.IsNaN(t))
-            return null;
-        return PointOfReferenceAtTime(Time2(t));
+            return (null, t);
+        return (PointOfReferenceAtTime(Time2(t)), t);
     }
 
     public override Event See(Event e)

@@ -23,9 +23,9 @@ public abstract partial class Path : Node
 	}
 
 	/* ## @param e Event where you look from.
-	## @return The point of reference where the path crosses
+	## @return The point of reference where the path crosses, and the proper time of the crossing from the point of reference of the Entity whose path this is.
 	## the past lightcone of that event, given in absolute coordinates. */
-	abstract public PointOfReference SeenFromRest(Event e);
+	abstract public (PointOfReference pointOfReference, float t) SeenFromRest(Event e);
 
 	/* ## @param e Event to be seen.
 	## @return The point where the path crosses the future lightcone of
@@ -37,15 +37,15 @@ public abstract partial class Path : Node
 	## @return The point of reference where the path crosses
 	## the future lightcone of that event, given relative to
 	## the point of reference `por`. */
-	public PointOfReference Seen(PointOfReference por) {
-		var seen0 = SeenFromRest(por.GetEvent());
+	public (PointOfReference pointOfReference, float t) Seen(PointOfReference por) {
+		(var seen0, float t) = SeenFromRest(por.GetEvent());
 		if (seen0 == null)
 		{
-			return null;
+			return (null, float.NaN);
 		}
 		else
 		{
-			return por.Inverse() * seen0;
+			return (por.Inverse() * seen0, t);
 		}
 	}
 

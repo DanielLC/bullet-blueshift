@@ -4,18 +4,14 @@ subroutine missile(accel, angle, time)
 end
 
 subroutine spiral(accel, initialAngle, deltaAngle, deltaTime, airTime)
+	wait(0.1)
 	angle = initialAngle
-	spawn missile(accel, angle, airTime)
-	
-	wait(10)
-	print("test")
-	spawn missile(accel, angle+deltaAngle, airTime)
-	#while true:
-	#	spawn missile(accel, angle, airTime)
-	#	wait(deltaTime)
-	#	angle += deltaAngle
-	#	angle %= 360
-	#end
+	while true:
+		spawn missile(accel, angle, airTime)
+		wait(deltaTime)
+		angle += deltaAngle
+		angle %= 360
+	end
 end
 
 subroutine enemy()

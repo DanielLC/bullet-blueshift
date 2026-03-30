@@ -14,7 +14,6 @@ public partial class Entity : Node2D
 	public Entity baseEntity;
 	virtual public float Time => path.EndTime;
 	private static readonly Dictionary<string, Texture2D> textureCache = [];
-	//private float nextEmitterTime = float.PositiveInfinity;
 
 	public void Translate(Event e)
 	{
@@ -53,7 +52,7 @@ public partial class Entity : Node2D
 		Player.Error(emitters.Peek().emitter.InstructionPointer, "Emitter got into an infinite loop containing this line on creation.");
 	}
 
-	virtual public void UpdateEmitters()
+	virtual public void UpdateEmitters(float t)
 	{
 		//GD.Print("Entity.UpdateEmitters");
 		if (emitters.IsEmpty)
@@ -61,11 +60,9 @@ public partial class Entity : Node2D
 		for (int _ = 0; _ < 256; ++_)
 		{
 			(float time, ScriptVM emitter) = emitters.Peek();
-			// GD.Print("Entity.UpdateEmitters: " + path.EndTime + " " + time);
-			// BUG: I think the problem here is that I'm looking at the end of the path. I should be looking at the current time show on the screen. I end up spawinging bullets in the future, which the game isn't set up to handle.
-			// That's also going to be a problem for spawning enemies some distance away.
-			if (path.EndTime < time)
+			if (t < time)
 				return;
+			GD.Print("Entity.UpdateEmitters: ", t, ", ", time);
 			if (emitter.Run())
 			{
 				// If it's still running, update the time.
@@ -159,7 +156,7 @@ public partial class Entity : Node2D
 			QueueFree();
 			return;
 		}
-		PointOfReference relativePOR = path.Seen(player.por);
+		(var relativePOR, float t) = path.Seen(player.por);
 		if (relativePOR == null)
 		{
 			//For now I'll just move it out of view.
@@ -174,6 +171,7 @@ public partial class Entity : Node2D
 		{
 			UpdateShader();
 		}
+		UpdateEmitters(t);
 	}
 
 	private void UpdateShader()
@@ -225,19 +223,17 @@ public partial class Entity : Node2D
 	virtual public void AddAcceleration(float accel, float radians, float time)
 	{
 		path.AddAcceleration(accel, radians, time);
-		UpdateEmitters();
 	}
 
 	virtual public void Extend(float time)
 	{
 		path.Extend(time);
-		UpdateEmitters();
 	}
 	public Event GetEnd()
 	{
 		return path.GetEnd();
 	}
-	public PointOfReference GetEndPOR()
+	virtual public PointOfReference GetEndPOR()
 	{
 		return path.GetEndPOR();
 	}

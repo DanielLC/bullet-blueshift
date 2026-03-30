@@ -101,8 +101,10 @@ public partial class Compound : Path
 	//TODO: Make Entity call this so it only has to find the component once.
 	public int GetComponentIndex(float s)
 	{
+		GD.Print("Compound.GetComponentIndex: ", s);
 		if (s < 0)
 		{
+			GD.Print("Compound.GetComponentIndex: Doesn't exist yet");
 			//It's before the object existed
 			return -1;
 		}
@@ -110,10 +112,12 @@ public partial class Compound : Path
 		{
 			if (s < times[i])
 			{
+				GD.Print("Compound.GetComponentIndex: ", i - 1);
 				return i - 1;
 			}
 		}
 		//It's after the object disappeared
+		GD.Print("Compound.GetComponentIndex: Disappeared");
 		return -1;
 	}
 	public PointOfReference PointOfReferenceAtTime(float s, int i)
@@ -132,8 +136,11 @@ public partial class Compound : Path
 
 	public override PointOfReference PointOfReferenceAtTime(float s)
 	{
+		if (s == 0)
+			return endPORs[0];
 		int i = GetComponentIndex(s);
-		return PointOfReferenceAtTime(s, i);
+		var output = PointOfReferenceAtTime(s, i);
+		return output;
 	}
 
 	public override Event Event(float s)
@@ -175,29 +182,35 @@ public partial class Compound : Path
 		return false;
 	}
 
-	public override PointOfReference SeenFromRest(Event e)
+	public override (PointOfReference, float) SeenFromRest(Event e)
 	{
 		if (components.Count == 0)
-			return null;
+			return (null, float.NaN);
 		//If the object hasn't been created yet, there's nothing to draw.
 		if (events[0] > e)
 		{
 			// TODO: I should probably make this use a Rest if it's still close enough that part of it is visible.
+			// Or make it so Entities start as a point and then grow at the speed of light instead of instantly appearing at full size.
 			return components[0].SeenFromRest(e);
-			// return null
+			// return (null, float.NaN);
 		}
-		//Otherwise, go through paths one by one and find the one that sees you.
-		//In the shader, this should be a binary search, and only look at the components that it could reasonably be.
-		//But here, if I'm building the path all the way from the player's past light cone to future one, this is generally going to be at the beginning.
-		//Assuming I start erasing them if they're no longer visible. I suppose I should probably do that here?
+		// Otherwise, go through paths one by one and find the one that sees you.
+		// In the shader, this should be a binary search, and only look at the components that it could reasonably be.
+		// But here, if I'm building the path all the way from the player's past light cone to future one, this is generally going to be at the beginning.
+		// Assuming I start erasing them if they're no longer visible. I suppose I should probably do that here?
+		// Note: I'm pretty sure I did that since then. And now it only tracks components where the Entity partially overlaps the past lightcone.
+		PointOfReference pointOfReference;
+		float t;
 		for (int i = 1; i < components.Count; ++i)
 		{
 			if (events[i] > e)
 			{
-				return components[i - 1].SeenFromRest(e);
+				(pointOfReference, t) = components[i - 1].SeenFromRest(e);
+				return (pointOfReference, t + times[i]);
 			}
 		}
-		return components[^1].SeenFromRest(e);
+		(pointOfReference, t) = components[^1].SeenFromRest(e);
+		return (pointOfReference, t + times[^2]);   //times is one longer than components, and includes the final component, so I'm using the next to last instead of the last.
 	}
 
 	public override Event See(Event e)

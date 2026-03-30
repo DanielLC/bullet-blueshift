@@ -11,9 +11,9 @@ public partial class Rest : Path
 		return new Event(0, 0, s);
 	}
 
-	public override PointOfReference SeenFromRest(Event e) {
+	public override (PointOfReference, float) SeenFromRest(Event e) {
 		var tt = e.t - Mathf.Sqrt(e.x*e.x + e.y*e.y);
-		return new Event(0, 0, tt).GetTranslation();
+		return (new Event(0, 0, tt).GetTranslation(), tt);
 	}
 	
 	public override Event See(Event e) {

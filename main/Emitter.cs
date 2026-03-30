@@ -7,6 +7,10 @@ public partial class Emitter : Entity
 	// TODO: Overload GetEndPOR() to multiply by rotation. Then you can rotate Emitters to change what direction spawned bullets go.
 	// private PointOfReference rotation = PointOfReference.IDENTITY;
 	override public float Time => time;
+	override public PointOfReference GetEndPOR()
+	{
+		return path.PointOfReferenceAtTime(time);
+	}
 	override public void AddAcceleration(float accel, float radians, float time)
 	{
 		this.time += time;
@@ -19,10 +23,10 @@ public partial class Emitter : Entity
 		//GD.Print("Emitter.Extend: ", this.time);
 	}
 	
-	override public void UpdateEmitters()
+	override public void UpdateEmitters(float t)
 	{
 		//GD.Print("Emitter.UpdateEmitters");
-		baseEntity.UpdateEmitters();
+		baseEntity.UpdateEmitters(t);
 	}
 
 	override public void NewEmitter(int instructionPointer, Godot.Collections.Array variables)

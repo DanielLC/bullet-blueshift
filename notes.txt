@@ -1,14 +1,3 @@
-Bugs:
-
-Emitters aren't working properly, and don't seem to react to wait() as they should.
-
-The problem is they're immidiately firing bullets in the future. Here's some potential ways to solve this:
-	1) Have it track the current proper time every frame, then use that to see if it's time for an emitter to do something. It calculates proper time when figuring out when a hyperbola is seen, but that's not currently passed up the chain, and I'd have to make the functions return tuples.
-	2) Have it track the event where they're fired, and check if that event is now in the past. This is a more complex calculation, but might end up actually being faster.
-	3) Have it pass the event to Player, and let Player worry about spawning them. This can be useful if you want to spawn bullets somewhere other than your past lightcone, but it means you won't know the order, so you'd have to check every one every frame. And there could be a lot. This is a bad idea.
-
-I'm picking option 1, but I think it would be prudent to commit the but I fixed first (it wasn't updating the shaders sometimes)
-
 Doing:
 
 Improving errors and having it show a stack trace for problems in my C#, but not for problems in the user's script.

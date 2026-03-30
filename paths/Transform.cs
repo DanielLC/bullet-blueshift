@@ -32,13 +32,13 @@ public partial class Transform : Path
     }
 
     //Doesn't include rotation. That shouldn't matter, but if I ever do try to include it, this needs to be fixed.
-    public override PointOfReference SeenFromRest(Event e)
+    public override (PointOfReference, float) SeenFromRest(Event e)
     {
-        var seen0 = path.SeenFromRest(pathTransform.Inverse() * e);
+        (var seen0, float t) = path.SeenFromRest(pathTransform.Inverse() * e);
         if (seen0 == null)
-            return null;
+            return (null, t);
         else
-            return pathTransform * seen0;
+            return (pathTransform * seen0, t);
         //return pathTransform * seen0 * PointOfReference.FromRotation(-(initialRotation + time * rotationSpeed));
     }
 
