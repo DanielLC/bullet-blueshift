@@ -132,7 +132,7 @@ public partial class ScriptVM : RefCounted
     }
     private Variant Execute(Script.Instruction instruction)
     {
-        //GD.Print("ScriptVM.Execute: line ", instruction.line+1, ", variables ", string.Join(", ", variables));
+        // GD.Print("ScriptVM.Execute: line ", instruction.line+1, ", variables ", string.Join(", ", variables));
         Variant result = instruction.expression.Execute(variables, context);
         if (instruction.expression.HasExecuteFailed())
         {

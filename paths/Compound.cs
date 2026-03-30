@@ -28,17 +28,16 @@ public partial class Compound : Path
 		this.rotationSpeed = rotationSpeed;
 	}
 
-	// TODO: Test
 	private void Transform(PointOfReference transform)
 	{
 		endPORs[^1] = endPORs[^1] * transform;
 		events[^1] = endPORs[^1].GetEvent();
 		coevents[^1] = GetCoevent(endPORs[^1]);
+		UpdateShader();
 	}
 
 	public void Translate(Event offset)
 	{
-		// TODO: Error if it's not at the beginning. Maybe with all of them?
 		Transform(offset.GetTranslation());
 	}
 
@@ -63,10 +62,10 @@ public partial class Compound : Path
 	//And really, it should be looking for just the visible components.
 	public void UpdateShader()
 	{
-		if(components.Count >= 64)
-        {
+		if (components.Count >= 64)
+		{
 			throw new Exception("Too many components for shader. Fix it so it's not trying to show all these components at once.");
-        }
+		}
 		shader.SetShaderParameter("segment_count", components.Count + 1);
 		shader.SetShaderParameter("coevents", coevents.ToArray());
 		var pathTransforms = new float[components.Count * 16];
@@ -111,7 +110,7 @@ public partial class Compound : Path
 		{
 			if (s < times[i])
 			{
-				return i-1;
+				return i - 1;
 			}
 		}
 		//It's after the object disappeared
@@ -290,6 +289,7 @@ public partial class Compound : Path
 			endPORs[^1] = components[^1].PointOfReferenceAtTime(times[^1]);
 			events[^1] = endPORs[^1].GetEvent();
 			coevents[^1] = GetCoevent(endPORs[^1]);
+			UpdateShader();
 		}
 	}
 

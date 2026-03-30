@@ -13,8 +13,10 @@ public partial class Player : Node2D
 
     public PointOfReference por;
     private static readonly PackedScene EntityScene = (PackedScene)ResourceLoader.Load("res://main/Entity.tscn");
-    private Entity entity;    //This was representing the player. The game is not ready for it and it's probably overkill.
+    private Entity entity;
     private static Player instance;
+    private Exception exception = null;
+    private bool hasError = false;
 
     public Player()
     {
@@ -33,13 +35,16 @@ public partial class Player : Node2D
 
             ScriptedLevel();
             entity = SpawnEntity(PLAYER_SIZE, PLAYER_ROTATION, por, -1);
+            GD.Print("Player._Ready: A");
             entity.NewEmitter(0, []);
+            GD.Print("Player._Ready: B");
 
         }
         catch (Exception e)
         {
-            CallDeferred("CatchError", [e.Message]);
-            //CatchError(e);
+            GD.Print("Player._Ready: Script compiler error");
+            exception = e;
+            hasError = true;
         }
     }
 
@@ -51,6 +56,12 @@ public partial class Player : Node2D
 
     public override void _Process(double delta)
     {
+        if (hasError)
+        {
+            CatchError(exception);
+            exception = null;
+            return;
+        }
         try
         {
             //GD.Print($"Player._Process: FPS: {1 / delta}");
@@ -100,7 +111,8 @@ public partial class Player : Node2D
         }
         catch (Exception e)
         {
-            CallDeferred("CatchError", [e.Message]);
+            GD.Print("Player._Process: Script runtime error");
+            CatchError(e);
         }
     }
 
@@ -128,15 +140,26 @@ public partial class Player : Node2D
 
     public static void Error(int lineNumber, string message)
     {
-        if (lineNumber < 0)
-            message = $"ERROR: {message}";
-        else
-            message = $"ERROR on line {lineNumber + 1}: {Script.lines[lineNumber].Trim()}\n{message}";
-        throw new Exception(message);
+        GD.Print("Player.Error");
+        // if (lineNumber < 0)
+        //     message = $"ERROR: {message}";
+        // else
+        //     message = $"ERROR on line {lineNumber + 1}: {Script.lines[lineNumber].Trim()}\n{message}";
+        throw new ScriptException(message, lineNumber);
     }
 
-    private void CatchError(string errorText)
+    private void CatchError(Exception e)
     {
+        GD.Print("Player.CatchError");
+        string errorText = "";
+        if (e is ScriptException scriptException)
+        {
+            errorText = scriptException.ErrorText;
+        }
+        else
+        {
+            errorText = e.StackTrace;
+        }
         Debug.WriteLine($"Catching error: {errorText}");
         //var errorText = e.Message;
 
@@ -164,7 +187,7 @@ public partial class Player : Node2D
             // window.QueueFree();
             // GetTree().Paused = false;
             // GetTree().ChangeSceneToFile("res://Player.tscn");
-            
+
             OS.CreateProcess(OS.GetExecutablePath(), new string[] { });
             GetTree().Quit();
         };
@@ -182,5 +205,20 @@ public partial class Player : Node2D
         GetTree().Root.AddChild(window);
         GetTree().Paused = true;
         window.PopupCentered();
+    }
+
+    private class ScriptException(string message, int lineNumber) : Exception(message)
+    {
+        private readonly int lineNumber = lineNumber;
+        public string ErrorText
+        {
+            get
+            {
+                if (lineNumber < 0)
+                    return $"ERROR: {Message}";
+                else
+                    return $"ERROR on line {lineNumber + 1}: {Script.lines[lineNumber].Trim()}\n{Message}";
+            }
+        }
     }
 }

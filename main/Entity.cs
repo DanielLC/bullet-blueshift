@@ -14,6 +14,7 @@ public partial class Entity : Node2D
 	public Entity baseEntity;
 	virtual public float Time => path.EndTime;
 	private static readonly Dictionary<string, Texture2D> textureCache = [];
+	//private float nextEmitterTime = float.PositiveInfinity;
 
 	public void Translate(Event e)
 	{
@@ -37,10 +38,10 @@ public partial class Entity : Node2D
 			//GD.Print("Entity.NewEmitter ", emitter.Time);
 			if (!script.Run())
 			{
-				GD.Print("Entity.NewEmitter: Emmitter ", emitter.GetInstanceId(), ", died immediately (why?)");
+				// GD.Print("Entity.NewEmitter: Emmitter ", emitter.GetInstanceId(), ", died immediately (why?)");
 				// If it hits the end before anything happened, destroy it.
 				emitter.QueueFree();
-				GD.Print("Entity.NewEmitter: Is the emitter being deleted? ", emitter.IsQueuedForDeletion());
+				// GD.Print("Entity.NewEmitter: Is the emitter being deleted? ", emitter.IsQueuedForDeletion());
 				return;
 			}
 			if (emitter.Time > 0)
@@ -60,6 +61,9 @@ public partial class Entity : Node2D
 		for (int _ = 0; _ < 256; ++_)
 		{
 			(float time, ScriptVM emitter) = emitters.Peek();
+			// GD.Print("Entity.UpdateEmitters: " + path.EndTime + " " + time);
+			// BUG: I think the problem here is that I'm looking at the end of the path. I should be looking at the current time show on the screen. I end up spawinging bullets in the future, which the game isn't set up to handle.
+			// That's also going to be a problem for spawning enemies some distance away.
 			if (path.EndTime < time)
 				return;
 			if (emitter.Run())

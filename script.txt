@@ -1,53 +1,28 @@
-#asdf
-
-subroutine missile(x, y, z)
-	accelerate(x, y, z)
+subroutine missile(accel, angle, time)
+	setParameters("star.png", 0.02, 2)
+	accelerate(accel, angle, time)
 end
 
-subroutine attackPattern(x, y, z)
-	if y > 0:
-		emitter attackPattern(x, -y, z)
-	end
-	angle = 0
-	while true:
-		spawn missile(x, angle, z)
-		angle += y
-		angle %= 360
-		wait(0.1)
-	end
+subroutine spiral(accel, initialAngle, deltaAngle, deltaTime, airTime)
+	angle = initialAngle
+	spawn missile(accel, angle, airTime)
+	
+	wait(10)
+	print("test")
+	spawn missile(accel, angle+deltaAngle, airTime)
+	#while true:
+	#	spawn missile(accel, angle, airTime)
+	#	wait(deltaTime)
+	#	angle += deltaAngle
+	#	angle %= 360
+	#end
 end
 
 subroutine enemy()
-	setParameters("star.png", 0.1, 2)
-	displace(0, 0.3, 0.3)
-	a = 0.2
-	emitter attackPattern(0.2,10,2)
-	angle = 0
-	while angle < 180
-		accelerate(a, angle, 0.1)
-		angle = angle + 20
-	end
-	while true
-		accelerate(a, angle, 0.1)
-		angle = (angle + 10)%360
-	end
+	#displace(0.3, 0, -0.3)
+	setParameters("star.png", 0.2, 2)
+	emitter spiral(0.2, 0, 60, 0.03, 4)
+	wait(10)
 end
 
-
-subroutine offsetShot(x)
-	displace(0.3, 0, -0.3)
-	accelerate(0.2, x, 2)
-end
-
-angle = 0
-while true:
-	spawn offsetShot(angle)
-	angle += 5
-	angle %= 360
-	wait(0.1)
-end
-#spawn enemy()
-#emitter attackPattern(0.2,5,2)
-#emitter attackPattern(0.2,-5,2)
-#spawn missile(0.2,0,10)
-#wait(0.1)
+spawn enemy()

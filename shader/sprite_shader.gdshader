@@ -281,12 +281,13 @@ vec4 draw(vec2 screen_pos) {
 }
 
 void fragment() {
+	COLOR = draw(SCREEN_UV);
 	//Draw the outline (for debugging purposes)
-	if(UV.x < 0.01 || UV.x > 0.99 || UV.y < 0.01 || UV.y > 0.99) {
+	/*if(UV.x < 0.01 || UV.x > 0.99 || UV.y < 0.01 || UV.y > 0.99) {
 		COLOR = vec4(0,1,0,1);
 	} else {
 		//COLOR = path_transform[0][3];
 		//COLOR.a = 1.0;
 		COLOR = draw(SCREEN_UV);
-	}
+	}*/
 }

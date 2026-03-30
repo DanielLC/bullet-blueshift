@@ -47,7 +47,8 @@ public partial class Hyperbola : Path
     {
         if (e.t <= -e.y)
         {
-            GD.Print("e.t <= -e.y");
+            // This comes up if you're trying to draw something before any of the light it ever emitted would reach you (which is possible because of constant acceleration).
+            GD.Print("Hyperbola.FindConeIntersectionT: e.t <= -e.y");
             return float.NaN;
         }
         var u = e.y;
