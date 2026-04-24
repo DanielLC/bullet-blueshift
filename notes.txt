@@ -1,7 +1,3 @@
-Doing:
-
-Improving errors and having it show a stack trace for problems in my C#, but not for problems in the user's script.
-
 TODO:
 
 Necessary for pre-alpha:

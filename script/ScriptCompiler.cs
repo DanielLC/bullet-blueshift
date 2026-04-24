@@ -174,7 +174,7 @@ public partial class ScriptCompiler : Node
         }
         return false;
     }
-    // This really needs a different name.
+    // This function is used when you use the call, spawn, or emitter commands. It doesn't call a spawn emitter or something. Needs a better name.
     private void CallSpawnEmitter(Script.OpCode opCode, string commandName, string matchGroup2, int lineNumber, string line)
     {
         var match = subCallRegex.Match(matchGroup2);

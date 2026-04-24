@@ -7,6 +7,7 @@ public partial class Emitter : Entity
 	// TODO: Overload GetEndPOR() to multiply by rotation. Then you can rotate Emitters to change what direction spawned bullets go.
 	// private PointOfReference rotation = PointOfReference.IDENTITY;
 	override public float Time => time;
+	// path.PointOfReferenceAtTime() will return null if the Entity doesn't exist anymore. I'd add code to check for it, but what's it gonna do, return null?
 	override public PointOfReference GetEndPOR()
 	{
 		return path.PointOfReferenceAtTime(time);

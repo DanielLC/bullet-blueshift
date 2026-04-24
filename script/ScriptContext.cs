@@ -12,6 +12,11 @@ public partial class ScriptContext : RefCounted
         this.scriptVM = scriptVM;
         entity = scriptVM.entity;
     }
+
+    public void explode(float size, float brightness)
+    {
+        entity.Explode(size, brightness);
+    }
     public void displace(float r, float degrees, float time)
     {
         entity.Translate(new Event(r*cos(degrees), r*sin(degrees), time));

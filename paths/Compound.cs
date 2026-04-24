@@ -101,10 +101,8 @@ public partial class Compound : Path
 	//TODO: Make Entity call this so it only has to find the component once.
 	public int GetComponentIndex(float s)
 	{
-		GD.Print("Compound.GetComponentIndex: ", s);
 		if (s < 0)
 		{
-			GD.Print("Compound.GetComponentIndex: Doesn't exist yet");
 			//It's before the object existed
 			return -1;
 		}
@@ -112,12 +110,10 @@ public partial class Compound : Path
 		{
 			if (s < times[i])
 			{
-				GD.Print("Compound.GetComponentIndex: ", i - 1);
 				return i - 1;
 			}
 		}
 		//It's after the object disappeared
-		GD.Print("Compound.GetComponentIndex: Disappeared");
 		return -1;
 	}
 	public PointOfReference PointOfReferenceAtTime(float s, int i)

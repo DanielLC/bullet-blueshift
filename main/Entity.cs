@@ -14,6 +14,15 @@ public partial class Entity : Node2D
 	public Entity baseEntity;
 	virtual public float Time => path.EndTime;
 	private static readonly Dictionary<string, Texture2D> textureCache = [];
+    private static readonly PackedScene ExplosionScene = (PackedScene)ResourceLoader.Load("res://main/Explosion.tscn");
+
+	public void Explode(float size, float brightness)
+	{
+        Explosion explosion = (Explosion)ExplosionScene.Instantiate();
+        explosion.Initialize(player, size, brightness, path.GetEndPOR());
+		GD.Print("Entity.Explode: ", player);
+		player.AddChild(explosion);
+	}
 
 	public void Translate(Event e)
 	{
@@ -62,7 +71,6 @@ public partial class Entity : Node2D
 			(float time, ScriptVM emitter) = emitters.Peek();
 			if (t < time)
 				return;
-			GD.Print("Entity.UpdateEmitters: ", t, ", ", time);
 			if (emitter.Run())
 			{
 				// If it's still running, update the time.
@@ -76,7 +84,6 @@ public partial class Entity : Node2D
 				emitters.Pop();
 				emitter.entity.QueueFree();
 			}
-			//GD.Print("Entity.UpdateEmitters: ", emitter.entity.Time);
 			if (emitters.IsEmpty)
 				return;
 		}
@@ -121,8 +128,9 @@ public partial class Entity : Node2D
 			if (texture == null)
 			{
 				var fullPath = ProjectSettings.GlobalizePath(absPath);
-				//TODO: Give the full error.
-				//It needs the line number too. Should I pass that in?
+				// TODO: Give the full error.
+				// It needs the line number too. Should I pass that in?
+				// Looks like GD.Load() is just throwing an exception.
 				Player.Error(lineNumber, $"No texture found at'{fullPath}'.");
 			}
 			textureCache.Add(path, texture);
@@ -178,8 +186,6 @@ public partial class Entity : Node2D
 	{
 		shader.SetShaderParameter("por", player.por.xform);
 		shader.SetShaderParameter("por_inverse", player.por.inverse);
-		shader.SetShaderParameter("observer_position", Position);
-		//shader.SetShaderParameter("scale", 0.001f); //TODO: This shouldn't be hardcoded.
 	}
 
 	private float GetDoppler(PointOfReference por)

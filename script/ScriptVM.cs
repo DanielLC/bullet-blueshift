@@ -90,7 +90,12 @@ public partial class ScriptVM : RefCounted
                         Array newVars = variables[0..instruction.b].Duplicate(true);
                         newVars.AddRange((Array)Execute(instruction));
                         //GD.Print("ScriptVM.Run: ", instruction.line+1, ": ", string.Join(", ", newVars));
-                        Player.SpawnEntity(0.01f, 0, entity.GetEndPOR(), instruction.a, newVars);
+                        var por = entity.GetEndPOR();
+                        // If that point of reference doesn't exist, it's presumably an emitter with a dead entity.
+                        // But what if it's not? There could be something else that causes this. And with this code, the game won't crash and I'll probably never know.
+                        if(por == null)
+                            return false;
+                        Player.SpawnEntity(0.01f, 0, por, instruction.a, newVars);
                         break;
                     }
                 case Script.OpCode.EMITTER:

@@ -3,7 +3,6 @@ render_mode unshaded;
 
 uniform mat4 por;
 uniform mat4 por_inverse;
-uniform vec2 observer_position;	// pixels
 uniform float scale;			// pixels per light second
 uniform float size;				// size of the sprite
 uniform float spin_speed;
@@ -178,8 +177,8 @@ int get_component(vec4 event) {
 }
 
 //drawing functions
-//Originally this just returned if it's there, but I need to have it return brightness.
-float check_if_there(vec4 e2) {
+//Originally this just returned if it's there, but I need to have it return brightness and transparency.
+vec2 check_if_there(vec4 e2) {
 	//if(e2.x*e2.x + e2.y*e2.y > size*size)
 	//	discard;
 	e2 *= sqrt(2);
@@ -188,7 +187,7 @@ float check_if_there(vec4 e2) {
 	vec4 color = texture(texture_sampler, e2.xy/(2.0*size) + vec2(0.5,0.5));
 	if(color.x == 0.0 || color.w == 0.0)
 		discard;
-	return color.x;
+	return vec2(color.x, color.w);
 }
 
 float get_doppler(vec4 e, vec4 v) {
@@ -223,6 +222,17 @@ vec3 get_color(float ratio) {
 	else if (int(higher) == 3)
 		rgb[0] = fade(2.0 * t) * shifted_intensity / 2.0;
 
+	//if(shifted_wavelength <= 0.0)
+		//rgb = vec3(fade(-1.0/shifted_wavelength),0,0);
+	//else if (shifted_wavelength <= 1.0)
+		//rgb = vec3(fade(1.0-t),fade(t),0);
+	//else if (shifted_wavelength <= 2.0)
+		//rgb = vec3(0,fade(1.0-t),fade(t));
+	//else if (shifted_wavelength <= 3.0)
+		//rgb = vec3(0.5*fade(t),0,fade(1.0/(shifted_wavelength-2.0)));
+	//else
+		//rgb = vec3(0.5*fade(1.0/(shifted_wavelength-3.0)),0,fade(1.0/(shifted_wavelength-2.0)));
+
 	return rgb;
 }
 
@@ -256,7 +266,9 @@ vec4 draw(vec2 screen_pos) {
 	vec4 e3 = rotate_position(component, e2.event);
 
 	// Figure out if it even needs to draw that pixel
-	float brightness = check_if_there(e3);
+	vec2 brightnessAndAlpha = check_if_there(e3);
+	float brightness = brightnessAndAlpha.x;
+	float alpha = brightnessAndAlpha.y;
 	//return(int_to_color(component));
 
 	// === baz: Velocity at that event ===
@@ -275,7 +287,7 @@ vec4 draw(vec2 screen_pos) {
 	float doppler = get_doppler(foo, quux);
 
 	// === color based on doppler shift ===
-	vec4 color = vec4(get_color(doppler) * brightness, 1.0);
+	vec4 color = vec4(get_color(doppler) * brightness, alpha);
 
 	return color;
 }

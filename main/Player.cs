@@ -27,6 +27,7 @@ public partial class Player : Node2D
     {
         try
         {
+            RenderingServer.SetDefaultClearColor(new Color(0,0,0));
             //Sprite2D sprite = GetNode<Sprite2D>("Sprite2D");
             //sprite.ZIndex = 1;
             //sprite.Scale /= 128;
@@ -158,7 +159,8 @@ public partial class Player : Node2D
         }
         else
         {
-            errorText = e.StackTrace;
+            errorText = e.ToString();
+            errorText = errorText.Replace("\r\n", "\n");
         }
         Debug.WriteLine($"Catching error: {errorText}");
         //var errorText = e.Message;
@@ -176,17 +178,27 @@ public partial class Player : Node2D
         var text = new TextEdit();
         text.Text = errorText;
         text.Editable = false;
+        // This line turns on word wrap instead of having a horizontal scrollbar.
+        // I think it's better with the scrollbar, but if you want to change it, just uncomment the line.
+        // text.WrapMode = TextEdit.LineWrappingMode.Boundary;
         text.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         text.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
 
         var buttons = new HBoxContainer();
 
+        var copy = new Button { Text = "Copy to clipboard" };
+        copy.Pressed += () => DisplayServer.ClipboardSet(errorText);
+
         var reload = new Button { Text = "Reload" };
         reload.Pressed += () =>
         {
+            // Ideally you'd just reload the scene.
+
             // window.QueueFree();
             // GetTree().Paused = false;
             // GetTree().ChangeSceneToFile("res://Player.tscn");
+
+            //But I was too lazy to get it to work properly, so here's reloading the entire game.
 
             OS.CreateProcess(OS.GetExecutablePath(), new string[] { });
             GetTree().Quit();
@@ -195,6 +207,7 @@ public partial class Player : Node2D
         var quit = new Button { Text = "Quit" };
         quit.Pressed += () => GetTree().Quit();
 
+        buttons.AddChild(copy);
         buttons.AddChild(reload);
         buttons.AddChild(quit);
 
