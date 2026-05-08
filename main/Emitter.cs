@@ -40,5 +40,6 @@ public partial class Emitter : Entity
 	{
 		path = parent.path;
 		baseEntity = parent.baseEntity;
+		parent.AddChild(this);		//Note: I'm not sure about this. Maybe the Plyer should be the parent. Especially if I want Emitters to have sprites.
 	}
 }

@@ -1,3 +1,9 @@
+Doing:
+
+Make it so adding a new variable still says which variable position it will go in, so you can create a variable inside a loop without breaking everything.
+
+Also, make it so variables have to be declared with a var command. Jut adding one will crash it. That way, typos crash the program instead of silent bugs.
+
 TODO:
 
 Necessary for pre-alpha:
@@ -23,3 +29,10 @@ Allowing fields in scripts:
 This is something I want to add later. It would be nice to use it to modify properties of the bullet rather than built in variables or functions. ChatGPT tells me I can use Object.Set() when setting properties on the left side, and override Object._Set() in EntityProperties (which I will make for this purpose) so it can tell me when a property has been updated and make sure the game reflects that.
 
 Now that I have a good way going forward, I'm going to just make a ScriptContext.setProperties() function. If I add more properties to set it can get unwieldly, but if I have better method in the future, I don't have to worry yet.
+
+Scripting language oddities:
+
+# can't be used in a string, since it will comment out the end quote.
+Using / between integers does integer division, rounding towards zero.
+There is currently no elif.
+You can technically read arrays and fields, but there's no way to create them.

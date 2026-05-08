@@ -263,10 +263,11 @@ public partial class Compound : Path
 	{
 		Path path;
 		PointOfReference translate;
-		if (accel == 0)
+		if (accel == 0 || float.IsInfinity(radians) || float.IsNaN(radians))
 		{
 			path = new Rest();
 			translate = PointOfReference.IDENTITY;
+			radians = 0;
 		}
 		else
 		{

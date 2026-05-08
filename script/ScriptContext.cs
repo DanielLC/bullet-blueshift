@@ -13,13 +13,17 @@ public partial class ScriptContext : RefCounted
         entity = scriptVM.entity;
     }
 
-    public void explode(float size, float brightness)
-    {
-        entity.Explode(size, brightness);
-    }
+    // public void explode(float size, float brightness)
+    // {
+    //     entity.Explode(size, brightness);
+    // }
     public void displace(float r, float degrees, float time)
     {
-        entity.Translate(new Event(r*cos(degrees), r*sin(degrees), time));
+        entity.Translate(new Event(r * sin(degrees), -r * cos(degrees), time));
+    }
+    public void displace(float r, float degrees)
+    {
+        entity.Translate(new Event(r * sin(degrees), -r * cos(degrees), -r));
     }
     public void setParameters(string sprite, float size, float rotationSpeed)
     {
@@ -28,7 +32,7 @@ public partial class ScriptContext : RefCounted
     //This part is just ScriptContext. Emitters can't accelerate.
     public void accelerate(float acceleration, float degrees, float time)
     {
-        entity.AddAcceleration(acceleration, degrees * Mathf.Pi / 180, time);
+        entity.AddAcceleration(acceleration, (degrees + 180) * pi / 180, time);
         scriptVM.timeToPause = true;
     }
     public void wait(float time)
@@ -36,16 +40,68 @@ public partial class ScriptContext : RefCounted
         entity.Extend(time);
         scriptVM.timeToPause = true;
     }
+    public void nextFrame()
+    {
+        scriptVM.nextFrame = true;
+    }
     //Everything here should be in an Emitter class that ScriptContext extends.
     //TODO: Modify this to also show it on the screen.
     public void print(params object[] args)
     {
         GD.Print(string.Concat(args));
     }
+
+    public bool actionPressed(string action)
+    {
+        return Input.IsActionPressed(action);
+    }
+    public bool keyPressed(string keyName)
+    {
+        var key = OS.FindKeycodeFromString(keyName);
+        return Input.IsKeyPressed(key);
+    }
+    public float wasdDirection()
+    {
+        float x = 0;
+        float y = 0;
+        if (Input.IsPhysicalKeyPressed(Key.W)) y += 1;
+        if (Input.IsPhysicalKeyPressed(Key.A)) x -= 1;
+        if (Input.IsPhysicalKeyPressed(Key.S)) y -= 1;
+        if (Input.IsPhysicalKeyPressed(Key.D)) x += 1;
+        // I think there might be something keeping it from reacting right to positive infinity?
+        return angleTo(x, y);
+    }
+    // It might be better to combine these and add a way to read tuples into two variables.
+    public float mouseDirection()
+    {
+        Vector2 mouse;
+        try
+        {
+            mouse = entity.GetViewport().GetMousePosition();
+        }
+        catch(Exception e)
+        {
+            GD.Print("ScriptContext.mouseDirection: ", e.Message);
+            return float.PositiveInfinity;
+        }
+        Vector2 center = entity.GetViewportRect().Size * 0.5f;
+        Vector2 relative = mouse - center;
+        var angle = angleTo(relative.X, -relative.Y);
+        return angle;
+    }
+    // If I have this one, I really should normalize it with screen size.
+    public float mouseDistance()
+    {
+        Vector2 mouse = entity.GetViewport().GetMousePosition();
+        Vector2 center = entity.GetViewportRect().Size * 0.5f;
+        Vector2 relative = mouse - center;
+        return relative.Length();
+    }
+
     // Math constants
-    public float e = Mathf.E;
-    public float pi = MathF.PI;
-    public float goldenAngle = 180 * (3 - Mathf.Sqrt(5));
+    public const float e = Mathf.E;
+    public const float pi = Mathf.Pi;
+    public const float goldenAngle = 137.50776405003785f; //180 * (3 - Mathf.Sqrt(5));
     // Math functions
     public float sqrt(float x) => Mathf.Sqrt(x);
     public float exp(float x) => Mathf.Exp(x);
@@ -58,13 +114,19 @@ public partial class ScriptContext : RefCounted
     public float round(float x) => Mathf.Round(x);
     public float mod(float a, float b) => a % b;
     // Trig
-    public float sin(float x) => Mathf.Sin(x * Mathf.Pi / 180);
-    public float cos(float x) => Mathf.Cos(x * Mathf.Pi / 180);
-    public float tan(float x) => Mathf.Tan(x * Mathf.Pi / 180);
-    public float asin(float x) => 180 / Mathf.Pi * Mathf.Asin(x);
-    public float acos(float x) => 180 / Mathf.Pi * Mathf.Acos(x);
-    public float atan(float x) => 180 / Mathf.Pi * Mathf.Atan(x);
-    public float atan2(float y, float x) => 180 / Mathf.Pi * Mathf.Atan2(y, x);
+    public float sin(float x) => Mathf.Sin(x * pi / 180);
+    public float cos(float x) => Mathf.Cos(x * pi / 180);
+    public float tan(float x) => Mathf.Tan(x * pi / 180);
+    public float asin(float x) => 180 / pi * Mathf.Asin(x);
+    public float acos(float x) => 180 / pi * Mathf.Acos(x);
+    public float atan(float x) => 180 / pi * Mathf.Atan(x);
+    public float angleTo(float x, float y)
+    {
+        if (x == 0 && y == 0)
+            return float.PositiveInfinity;
+        else
+            return 180 / pi * Mathf.Atan2(x, y);
+    }
     // Hyperbolic trig
     public float sinh(float x) => Mathf.Sinh(x);
     public float cosh(float x) => Mathf.Cosh(x);
@@ -74,6 +136,10 @@ public partial class ScriptContext : RefCounted
     public float atanh(float x) => Mathf.Atanh(x);
     // Random functions
     public float random() => rng.Randf();
+    // Random functions
+    public float random(float max) => rng.Randf() * max;
+    // Random functions
+    public float random(float min, float max) => rng.RandfRange(min, max);
     public int randInt(int min, int max) => rng.RandiRange(min, max);
     public float normal(float mean, float deviation) => rng.Randfn(mean, deviation);
 }

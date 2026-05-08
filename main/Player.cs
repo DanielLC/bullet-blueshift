@@ -13,7 +13,8 @@ public partial class Player : Node2D
 
     public PointOfReference por;
     private static readonly PackedScene EntityScene = (PackedScene)ResourceLoader.Load("res://main/Entity.tscn");
-    private Entity entity;
+    private Entity playerEntity;
+    private ScriptVM playerScript;
     private static Player instance;
     private Exception exception = null;
     private bool hasError = false;
@@ -35,10 +36,10 @@ public partial class Player : Node2D
             por = PointOfReference.IDENTITY;
 
             ScriptedLevel();
-            entity = SpawnEntity(PLAYER_SIZE, PLAYER_ROTATION, por, -1);
-            GD.Print("Player._Ready: A");
-            entity.NewEmitter(0, []);
-            GD.Print("Player._Ready: B");
+            playerEntity = SpawnEntity(PLAYER_SIZE, PLAYER_ROTATION, por, -1);
+            playerEntity.Name = "Player Entity";
+            //playerEntity.NewEmitter(0, []);
+            playerScript = new ScriptVM(playerEntity);
 
         }
         catch (Exception e)
@@ -70,12 +71,29 @@ public partial class Player : Node2D
             //var viewportSize = GetViewportRect().Size;
             //Position = viewportSize / 2;
             //Scale = Mathf.Min(viewportSize.X, viewportSize.Y) * SCALE * Vector2.One;
-            var x = Input.GetActionStrength("ui_right") - Input.GetActionStrength("ui_left");
+           
+            /* var x = Input.GetActionStrength("ui_right") - Input.GetActionStrength("ui_left");
             var y = Input.GetActionStrength("ui_down") - Input.GetActionStrength("ui_up");
-            entity.AddAcceleration(Mathf.Sqrt(x * x + y * y) * ACCELERATION, Mathf.Atan2(-x, y), deltaF);
-            por = entity.GetEndPOR();
+            playerEntity.AddAcceleration(Mathf.Sqrt(x * x + y * y) * ACCELERATION, Mathf.Atan2(-x, y), deltaF);
+            por = playerEntity.GetEndPOR();
             var dir = new Vector2(x, y).Normalized() * deltaF * ACCELERATION;
             var v = Velocity.FromRapidity(dir.X, dir.Y);
+            por.RecalculateInverse();   //I probably don't have to do this every time, but I'll do it for now.*/
+
+            for (int _ = 0; !playerScript.nextFrame; ++_)
+            {
+                if(_ > 256)
+                {
+                    Error(playerScript.InstructionPointer, "Infinite loop. Did you forget nextFrame()?");
+                }
+                // TODO: Check if it's false and there's no more code to run.
+                playerScript.Run();
+            }
+            //GD.Print("Player.Run: Loop complete");
+            playerScript.nextFrame = false;
+            por = playerEntity.GetEndPOR();
+            // por isn't being updated? Why?
+            // GD.Print("Player.Run: ", playerEntity.GetEnd());
             por.RecalculateInverse();   //I probably don't have to do this every time, but I'll do it for now.
 
             var curEvent = por.GetEvent();

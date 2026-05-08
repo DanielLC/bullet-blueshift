@@ -11,6 +11,7 @@ public partial class ScriptVM : RefCounted
     private Array variables;
     private readonly System.Collections.Generic.Stack<StackElement> stack = new();
     public bool timeToPause;
+    public bool nextFrame;  // Only the Player needs this, but it's easier just to add it everywhere.
     public Entity entity;
     private ScriptContext context;
     private Regex missingVariableRegex = new(@"Invalid named index '(\w*)' for base type Object");
@@ -55,10 +56,15 @@ public partial class ScriptVM : RefCounted
             switch (instruction.opCode)
             {
                 case Script.OpCode.VAR:
-                    variables.Add(Execute(instruction));
+                    if (instruction.a == variables.Count)
+                        variables.Add(Execute(instruction));
+                    else
+                        variables[instruction.a] = Execute(instruction);
+                    // GD.Print("ScriptVM.Run: ", variables.Count);
                     break;
                 case Script.OpCode.SET:
                     variables[instruction.a] = Execute(instruction);
+                    // GD.Print("ScriptVM.Run: ", variables[instruction.a]);
                     break;
                 case Script.OpCode.RUN:
                     Execute(instruction);
@@ -93,8 +99,13 @@ public partial class ScriptVM : RefCounted
                         var por = entity.GetEndPOR();
                         // If that point of reference doesn't exist, it's presumably an emitter with a dead entity.
                         // But what if it's not? There could be something else that causes this. And with this code, the game won't crash and I'll probably never know.
-                        if(por == null)
+                        // Called it! Rounding error meant that when trying to run something just barely into the past, it would sometimes be just barely into the future.
+                        // I made it only run emitters slightly further into the past, but was that the best way to do it?
+                        if (por == null)
+                        {
+                            GD.Print("ScriptVM.Run: por == null");
                             return false;
+                        }
                         Player.SpawnEntity(0.01f, 0, por, instruction.a, newVars);
                         break;
                     }
@@ -143,7 +154,7 @@ public partial class ScriptVM : RefCounted
         {
             var errorText = instruction.expression.GetErrorText();
             var match = missingVariableRegex.Match(errorText);
-            if(match.Success)
+            if (match.Success)
                 errorText = $"Variable '{match.Groups[1].Value}' not defined.";
             Player.Error(instruction.line, errorText);
         }

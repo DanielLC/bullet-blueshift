@@ -3,6 +3,12 @@ subroutine missile(accel, angle, time)
 	accelerate(accel, angle, time)
 end
 
+subroutine missile2(accel, angle, accelTime, coastTime)
+	setParameters("star2.png", 0.02, 2)
+	accelerate(accel, angle, accelTime)
+	accelerate(0, 0, coastTime)
+end
+
 subroutine spiral(accel, initialAngle, deltaAngle, deltaTime, airTime)
 	angle = initialAngle
 	while true:
@@ -39,7 +45,7 @@ subroutine zigzagSpiral(accel, branches, minAngle, maxAngle, deltaAngle, deltaAn
 end
 
 subroutine enemy()
-	displace(0.3, 0, -0.3)
+	displace(0.3, 0)
 	setParameters("star2.png", 0.2, 1)
 	#emitter spiral(0.2, 0, goldenAngle, 0.03, 4)
 	emitter zigzagSpiral(0.03, 6, 0, 60, 3, 10, 0.2, 10)
@@ -51,10 +57,46 @@ subroutine enemy()
 	#	angle %= 360
 	#end
 end
+
+#It's easier just to use an emitter to shoot. Then I don't have to tie the fire rate to the framerate.
+#I think the problem here is once it gets to the player's current position in spacetime, it assumes they're dead.
+subroutine shoot()
+	a = 0.4
+	accelTime = 0.5
+	coastTime = 2
+	fireDelay = 0.05
+	
+	while true:
+		#print("Pew!")
+		dir = mouseDirection()
+		#print(dir)
+		if dir < 360:
+			spawn missile2(a, dir, accelTime, coastTime)
+		end
+		wait(fireDelay)
+	end
+end
+
 subroutine exploder(size, brightness)
 	setParameters("star2.png", 0.03, 3)
 	accelerate(0.2, 0, 1)
 	explode(size, brightness)
 end
-#spawn exploder(0.3, 1)
-spawn enemy()
+subroutine init()
+	#spawn enemy()
+	emitter shoot()
+end
+subroutine process()
+	a = 0.2
+	frameTime = 1.0/30.0
+	
+	#dir = mouseDirection()
+	dir = wasdDirection()
+	accelerate(a, dir, frameTime)
+end
+
+call init()
+while true:
+	call process()
+	nextFrame()
+end

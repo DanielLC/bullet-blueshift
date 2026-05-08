@@ -32,6 +32,7 @@ public partial class Entity : Node2D
 	virtual public void NewEmitter(int instructionPointer, Godot.Collections.Array variables)
 	{
 		//TODO: Check for too many emitters.
+		//Emitter is a node. This is not the proper way to construct it.
 		Emitter emitter = new(this);
 		//GD.Print("Entity.NewEmitter: ", instructionPointer, "/", Script.instructions.Count, ", ", emitter.GetInstanceId());
 		ScriptVM script = new(emitter, instructionPointer, variables);
@@ -69,7 +70,7 @@ public partial class Entity : Node2D
 		for (int _ = 0; _ < 256; ++_)
 		{
 			(float time, ScriptVM emitter) = emitters.Peek();
-			if (t < time)
+			if (t < time + 0.0001f)
 				return;
 			if (emitter.Run())
 			{
@@ -81,6 +82,7 @@ public partial class Entity : Node2D
 			else
 			{
 				// If it's not running anymore, destroy the emitter.
+				GD.Print("Entity.UpdateEmitters: Emitter destroyed");
 				emitters.Pop();
 				emitter.entity.QueueFree();
 			}
