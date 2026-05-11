@@ -10,7 +10,7 @@ subroutine missile2(accel, angle, accelTime, coastTime)
 end
 
 subroutine spiral(accel, initialAngle, deltaAngle, deltaTime, airTime)
-	angle = initialAngle
+	var angle = initialAngle
 	while true:
 		spawn missile(accel, angle, airTime)
 		wait(deltaTime)
@@ -20,8 +20,8 @@ subroutine spiral(accel, initialAngle, deltaAngle, deltaTime, airTime)
 end
 
 subroutine zigzagSpiral(accel, branches, minAngle, maxAngle, deltaAngle, deltaAngle2, deltaTime, airTime)
-	i = 0
-	angle = minAngle
+	var i = 0
+	var angle = minAngle
 	while true:
 		while angle < maxAngle:
 			i = 0
@@ -61,16 +61,16 @@ end
 #It's easier just to use an emitter to shoot. Then I don't have to tie the fire rate to the framerate.
 #I think the problem here is once it gets to the player's current position in spacetime, it assumes they're dead.
 subroutine shoot()
-	a = 0.4
-	accelTime = 0.5
-	coastTime = 2
-	fireDelay = 0.05
+	var a = 0.4
+	var accelTime = 0.5
+	var coastTime = 2
+	var fireDelay = 0.05
 	
 	while true:
 		#print("Pew!")
-		dir = mouseDirection()
+		var dir = mouseDirection()
 		#print(dir)
-		if dir < 360:
+		if !isNaN(dir):
 			spawn missile2(a, dir, accelTime, coastTime)
 		end
 		wait(fireDelay)
@@ -87,11 +87,11 @@ subroutine init()
 	emitter shoot()
 end
 subroutine process()
-	a = 0.2
-	frameTime = 1.0/30.0
+	var a = 0.2
+	var frameTime = 1.0/30.0
 	
 	#dir = mouseDirection()
-	dir = wasdDirection()
+	var dir = wasdDirection()
 	accelerate(a, dir, frameTime)
 end
 

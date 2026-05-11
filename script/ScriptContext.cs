@@ -97,11 +97,13 @@ public partial class ScriptContext : RefCounted
         Vector2 relative = mouse - center;
         return relative.Length();
     }
+    public bool isNaN(float x) => float.IsNaN(x);
 
     // Math constants
     public const float e = Mathf.E;
     public const float pi = Mathf.Pi;
     public const float goldenAngle = 137.50776405003785f; //180 * (3 - Mathf.Sqrt(5));
+    public const float nan = float.NaN;
     // Math functions
     public float sqrt(float x) => Mathf.Sqrt(x);
     public float exp(float x) => Mathf.Exp(x);
@@ -123,7 +125,7 @@ public partial class ScriptContext : RefCounted
     public float angleTo(float x, float y)
     {
         if (x == 0 && y == 0)
-            return float.PositiveInfinity;
+            return float.NaN;
         else
             return 180 / pi * Mathf.Atan2(x, y);
     }

@@ -1,24 +1,15 @@
-Doing:
-
-Make it so adding a new variable still says which variable position it will go in, so you can create a variable inside a loop without breaking everything.
-
-Also, make it so variables have to be declared with a var command. Jut adding one will crash it. That way, typos crash the program instead of silent bugs.
-
 TODO:
 
 Necessary for pre-alpha:
 
 Make it so you can set the sprite and size of spawned objects, and change their position (letting you spawn enemies off screen).
-Make it so you can load sprites instead of just the built in one
-Make errors not require the console to see.
 Put it on itch.io.
 
 Other:
 
-If a subroutine shares a variable name with a global, it uses the global variable instead of the local one. Fix this, or at least make an error if you try it.
-Make it so variables need to be explicitly declared, so typos will be more obvious
 Collisions
 Make it so enemies can have multiple overlapping sprites spinning at different rates
+	Ideally this can be done with the shader, but a less performant and more flexible version can be done by letting emitters have sprites
 Separate compound_shader into shader include files
 Elif statements
 Make it so you can print messages on the screen. Players won't want to use the console, and ideally it could allow dialogue.
@@ -35,4 +26,6 @@ Scripting language oddities:
 # can't be used in a string, since it will comment out the end quote.
 Using / between integers does integer division, rounding towards zero.
 There is currently no elif.
-You can technically read arrays and fields, but there's no way to create them.
+You can technically read arrays and fields, but there's no way to create them or write to them.
+Commands cannot be printed across lines.
+Commands are case insensitive. Nothing else is. I should probably just make them case sensitive.

@@ -44,7 +44,7 @@ public partial class ScriptCompiler : Node
     }
     private readonly Stack<StackMemory> stack = new();
 
-    private bool TryParseAssignment(string line, int lineNumber)
+    private bool TryParseAssignment(string line, int lineNumber, bool declare)
     {
         Match match = assignmentRegex.Match(line);
         if (match.Success)
@@ -55,6 +55,11 @@ public partial class ScriptCompiler : Node
             var expressionText = match.Groups[3].Value;
             if (operation != "")
             {
+                if(declare)
+                {
+                    Player.Error(lineNumber, $"You can't use assignment operators like {operation}= when declaring a variable.");
+                    return true;
+                }
                 if (operation == "%")
                     expressionText = "mod(" + varName + "," + expressionText + ")";
                 else
@@ -75,6 +80,11 @@ public partial class ScriptCompiler : Node
                 var index = variableNames.IndexOf(varName);
                 if (index == -1)
                 {
+                    if(!declare)
+                    {
+                        Player.Error(lineNumber, $"Variable {varName} not found. Did you forget to declare it with var? Or was it a typo?");
+                        return true;
+                    }
                     index = variableNames.Count;
                     variableNames.Add(varName);
                     // Debug.WriteLine("ScriptCompiler.TryParseAssignment: New variable '" + varName + "' at index " + index);
@@ -82,6 +92,11 @@ public partial class ScriptCompiler : Node
                 }
                 else
                 {
+                    if(declare)
+                    {
+                        Player.Error(lineNumber, $"Variable {varName} already exists in scope. Shadowing is not currently supported.");
+                        return true;
+                    }
                     Script.AddInstruction(Script.OpCode.SET, lineNumber, expression, index);
                 }
             }
@@ -96,17 +111,20 @@ public partial class ScriptCompiler : Node
         if (match.Success)
         {
             var commandName = match.Groups[1].Value.ToLower();
+            var cammandText = match.Groups[2].Value;
             switch (commandName)
             {
+                case "var":
+                    return TryParseAssignment(cammandText, lineNumber, true);
                 case "if":
                     expression = new Expression();
-                    expression.Parse(match.Groups[2].Value, [.. variableNames]);
+                    expression.Parse(cammandText, [.. variableNames]);
                     Script.AddInstruction(Script.OpCode.JUMP_IF, lineNumber, expression, Script.instructions.Count + 1);
                     stack.Push(new StackMemory(Jump.IF, Script.instructions.Count - 1, variableNames.Count));
                     return true;
                 case "while":
                     expression = new Expression();
-                    expression.Parse(match.Groups[2].Value, [.. variableNames]);
+                    expression.Parse(cammandText, [.. variableNames]);
                     Script.AddInstruction(Script.OpCode.JUMP_IF, lineNumber, expression, Script.instructions.Count + 1);
                     stack.Push(new StackMemory(Jump.WHILE, Script.instructions.Count - 1, variableNames.Count));
                     return true;
@@ -131,14 +149,15 @@ public partial class ScriptCompiler : Node
                 case "subroutine":
                     {
                         Script.AddInstruction(Script.OpCode.JUMP, lineNumber);
-                        match = subParamRegex.Match(match.Groups[2].Value);
+                        match = subParamRegex.Match(cammandText);
+                        var parameterString = match.Groups[2].Value;
                         if (!match.Success)
                         {
                             Player.Error(lineNumber, $"Subroutine definition failed to parse.");
                             return true;
                         }
                         var subroutineName = match.Groups[1].Value.ToLower();
-                        var parameters = match.Groups[2].Value.Split(",", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+                        var parameters = parameterString.Split(",", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
                         foreach (var parameter in parameters)
                         {
                             if(variableNames.Contains(parameter)) {
@@ -256,7 +275,7 @@ public partial class ScriptCompiler : Node
             //Command (<Command> <Expression>, <Expression>, ...)
             else if (TryParseCommand(line, lineNumber)) continue;
             //Assignment (variableName = <Expression>)
-            else if (TryParseAssignment(line, lineNumber)) continue;
+            else if (TryParseAssignment(line, lineNumber, false)) continue;
             else Player.Error(lineNumber, "Failed to parse.");
         }
         SubroutineFinalPass();
