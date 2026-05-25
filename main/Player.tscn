@@ -8,3 +8,5 @@ script = ExtResource("1_5o1fi")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 script = ExtResource("3_x6ikj")
+
+[node name="UIRoot" type="CanvasLayer" parent="."]

@@ -1,3 +1,7 @@
+
+
+var x = 1
+
 subroutine missile(accel, angle, time)
 	setParameters("star2.png", 0.02, 2)
 	accelerate(accel, angle, time)
@@ -82,9 +86,14 @@ subroutine exploder(size, brightness)
 	accelerate(0.2, 0, 1)
 	explode(size, brightness)
 end
+
 subroutine init()
 	#spawn enemy()
 	emitter shoot()
+	#var ui = panel(0,0.1,0.2,0.3)
+	#setColor(ui, "red")
+	#setText(ui, "red")
+	#setSprite(ui, "star2.png")
 end
 subroutine process()
 	var a = 0.2

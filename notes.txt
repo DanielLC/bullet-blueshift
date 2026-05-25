@@ -1,5 +1,7 @@
 TODO:
 
+I think there was a bug initializing a global variable and setting it inside a function. Look into that.
+
 Necessary for pre-alpha:
 
 Make it so you can set the sprite and size of spawned objects, and change their position (letting you spawn enemies off screen).

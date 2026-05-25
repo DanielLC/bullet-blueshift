@@ -18,7 +18,9 @@ public partial class Player : Node2D
     private static Player instance;
     private Exception exception = null;
     private bool hasError = false;
+    public static CanvasLayer uiRoot;
 
+    public static Player Instance { get { return instance; } }
     public Player()
     {
         instance = this;
@@ -28,10 +30,8 @@ public partial class Player : Node2D
     {
         try
         {
+            uiRoot = GetNode<CanvasLayer>("UIRoot");
             RenderingServer.SetDefaultClearColor(new Color(0,0,0));
-            //Sprite2D sprite = GetNode<Sprite2D>("Sprite2D");
-            //sprite.ZIndex = 1;
-            //sprite.Scale /= 128;
 
             por = PointOfReference.IDENTITY;
 

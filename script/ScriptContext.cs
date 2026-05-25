@@ -79,7 +79,7 @@ public partial class ScriptContext : RefCounted
         {
             mouse = entity.GetViewport().GetMousePosition();
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             GD.Print("ScriptContext.mouseDirection: ", e.Message);
             return float.PositiveInfinity;
@@ -97,7 +97,13 @@ public partial class ScriptContext : RefCounted
         Vector2 relative = mouse - center;
         return relative.Length();
     }
-    public bool isNaN(float x) => float.IsNaN(x);
+
+    // UIElement stuff
+    public UIElement panel(float x, float y, float width, float height) => new UIElement(x, y, width, height);
+    public void setText(UIElement panel, string text) => panel.Text = text;
+    public void setColor(UIElement panel, string color) => panel.Background = color;
+    public void setSprite(UIElement panel, string sprite) => panel.SetSprite(sprite, scriptVM.InstructionPointer);
+    public void destroyPanel(UIElement panel) => panel.QueueFree();
 
     // Math constants
     public const float e = Mathf.E;
@@ -105,6 +111,7 @@ public partial class ScriptContext : RefCounted
     public const float goldenAngle = 137.50776405003785f; //180 * (3 - Mathf.Sqrt(5));
     public const float nan = float.NaN;
     // Math functions
+    public bool isNaN(float x) => float.IsNaN(x);
     public float sqrt(float x) => Mathf.Sqrt(x);
     public float exp(float x) => Mathf.Exp(x);
     public float pow(float x, float y) => Mathf.Pow(x, y);
