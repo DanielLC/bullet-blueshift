@@ -1,32 +1,32 @@
 using Godot;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Runtime.CompilerServices;
 
 public partial class Entity : Node2D
 {
-	public Compound path;
+	public Compound Path;
 	private Player player;
 	private ShaderMaterial shader;
-	public float size;
+	public float Size;
 	private readonly EmitterHeap emitters = new();
-	public Entity baseEntity;
-	virtual public float Time => path.EndTime;
+	public Entity BaseEntity;
+	virtual public float Time => Path.EndTime;
 	private static readonly Dictionary<string, Texture2D> textureCache = [];
-    private static readonly PackedScene ExplosionScene = (PackedScene)ResourceLoader.Load("res://main/Explosion.tscn");
+	private static readonly PackedScene ExplosionScene = (PackedScene)ResourceLoader.Load("res://main/Explosion.tscn");
+	private Area2D area;
+	public CircleShape2D shape;
 
 	public void Explode(float size, float brightness)
 	{
-        Explosion explosion = (Explosion)ExplosionScene.Instantiate();
-        explosion.Initialize(player, size, brightness, path.GetEndPOR());
+		Explosion explosion = (Explosion)ExplosionScene.Instantiate();
+		explosion.Initialize(player, size, brightness, Path.GetEndPOR());
 		GD.Print("Entity.Explode: ", player);
 		player.AddChild(explosion);
 	}
 
 	public void Translate(Event e)
 	{
-		path.Translate(e);
+		Path.Translate(e);
 	}
 
 	virtual public void NewEmitter(int instructionPointer, Godot.Collections.Array variables)
@@ -94,12 +94,12 @@ public partial class Entity : Node2D
 
 	public PointOfReference PointOfReferenceAtTime(float s)
 	{
-		return path.PointOfReferenceAtTime(s);
+		return Path.PointOfReferenceAtTime(s);
 	}
 
 	public void Initialize(Player player, float size, PointOfReference pointOfReference, float rotationSpeed)
 	{
-		baseEntity = this;
+		BaseEntity = this;
 		this.player = player;
 		//Sprite2D sprite = GetNode<Sprite2D>("Sprite2D");
 		var sprite = GetNode<MeshInstance2D>("MeshInstance2D");
@@ -112,8 +112,14 @@ public partial class Entity : Node2D
 			shader.SetShaderParameter("spin_speed", rotationSpeed);
 		}
 		sprite.Scale = new Vector2(size, size) * 4;
-		this.size = size;
-		path = new Compound(shader, pointOfReference, rotationSpeed);
+		this.Size = size;
+		Path = new Compound(shader, pointOfReference, rotationSpeed);
+		area = GetNode<Area2D>("Area2D");
+		area.AreaEntered += OnAreaEntered;
+		var collision = area.GetNode<CollisionShape2D>("CollisionShape2D");
+		collision.Shape = collision.Shape.Duplicate() as Shape2D;
+		shape = collision.Shape as CircleShape2D;
+		shape.Radius = size;
 	}
 
 	public void Initialize(Player player, float size, float rotationSpeed)
@@ -150,8 +156,9 @@ public partial class Entity : Node2D
 			shader.SetShaderParameter("size", size);
 			shader.SetShaderParameter("spin_speed", rotationSpeed);
 			sprite.Scale = new Vector2(size, size) * 4;
-			this.size = size;
-			path.rotationSpeed = rotationSpeed;
+			Size = size;
+			Path.rotationSpeed = rotationSpeed;
+			shape.Radius = size;
 		}
 		else
 		{
@@ -161,12 +168,12 @@ public partial class Entity : Node2D
 
 	public void Update()
 	{
-		if (path.CheckIfAllInPast(player.por.GetEvent(), size, shader))
+		if (Path.CheckIfAllInPast(player.por.GetEvent(), Size, shader))
 		{
 			QueueFree();
 			return;
 		}
-		(var relativePOR, float t) = path.Seen(player.por);
+		(var relativePOR, float t) = Path.Seen(player.por);
 		if (relativePOR == null)
 		{
 			//For now I'll just move it out of view.
@@ -230,19 +237,28 @@ public partial class Entity : Node2D
 
 	virtual public void AddAcceleration(float accel, float radians, float time)
 	{
-		path.AddAcceleration(accel, radians, time);
+		Path.AddAcceleration(accel, radians, time);
 	}
 
 	virtual public void Extend(float time)
 	{
-		path.Extend(time);
+		Path.Extend(time);
 	}
 	public Event GetEnd()
 	{
-		return path.GetEnd();
+		return Path.GetEnd();
 	}
 	virtual public PointOfReference GetEndPOR()
 	{
-		return path.GetEndPOR();
+		return Path.GetEndPOR();
+	}
+	private void OnAreaEntered(Area2D area)
+	{
+        GD.Print($"{this.area.CollisionLayer} collision with {area.CollisionLayer}");
+	}
+	virtual public void SetCollisions(uint layers, uint collidesWith)
+	{
+        area.CollisionLayer = layers;
+        area.CollisionMask = collidesWith;
 	}
 }

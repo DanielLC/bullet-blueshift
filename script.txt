@@ -1,8 +1,5 @@
-
-
-var x = 1
-
 subroutine missile(accel, angle, time)
+	setEnemyBullet()
 	setParameters("star2.png", 0.02, 2)
 	accelerate(accel, angle, time)
 end
@@ -50,6 +47,7 @@ end
 
 subroutine enemy()
 	displace(0.3, 0)
+	setEnemy()
 	setParameters("star2.png", 0.2, 1)
 	#emitter spiral(0.2, 0, goldenAngle, 0.03, 4)
 	emitter zigzagSpiral(0.03, 6, 0, 60, 3, 10, 0.2, 10)
@@ -87,9 +85,19 @@ subroutine exploder(size, brightness)
 	explode(size, brightness)
 end
 
+subroutine testBullet(dist)
+	setParameters("star2.png", 0.03, 3)
+	displace(dist, 0)
+	setEnemyBullet()
+	accelerate(0, 0, 10)
+end
+
 subroutine init()
+	setParameters("ship.png", 0.03, 0)
+	setAlly()
+	spawn testBullet(0.1)
 	#spawn enemy()
-	emitter shoot()
+	#emitter shoot()
 	#var ui = panel(0,0.1,0.2,0.3)
 	#setColor(ui, "red")
 	#setText(ui, "red")

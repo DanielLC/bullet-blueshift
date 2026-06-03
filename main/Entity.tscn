@@ -1,9 +1,11 @@
-[gd_scene load_steps=4 format=3 uid="uid://cg8hwelt427b1"]
+[gd_scene load_steps=5 format=3 uid="uid://cg8hwelt427b1"]
 
 [ext_resource type="Script" uid="uid://dj170nd4yrefg" path="res://main/Entity.cs" id="1_ql5c0"]
 [ext_resource type="Material" uid="uid://c1ji8qrk81gse" path="res://shader/sprite_material.tres" id="2_g4su7"]
 
 [sub_resource type="QuadMesh" id="QuadMesh_avva3"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_avva3"]
 
 [node name="Entity" type="Node2D"]
 script = ExtResource("1_ql5c0")
@@ -11,3 +13,10 @@ script = ExtResource("1_ql5c0")
 [node name="MeshInstance2D" type="MeshInstance2D" parent="."]
 material = ExtResource("2_g4su7")
 mesh = SubResource("QuadMesh_avva3")
+
+[node name="Area2D" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+shape = SubResource("CircleShape2D_avva3")

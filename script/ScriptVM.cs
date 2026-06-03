@@ -142,7 +142,7 @@ public partial class ScriptVM : RefCounted
     public Event RunEntity()
     {
         if (Run())
-            return entity.GetEndPOR() * new Event(0, 0, -entity.size);
+            return entity.GetEndPOR() * new Event(0, 0, -entity.Size);
         else
             return null;
     }

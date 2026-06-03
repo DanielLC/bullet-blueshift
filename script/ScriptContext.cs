@@ -98,6 +98,52 @@ public partial class ScriptContext : RefCounted
         return relative.Length();
     }
 
+    /*public void setLayer(int layer)
+    {
+        entity.Area.CollisionLayer |= 1u << layer;
+    }
+    public void clearLayer(int layer)
+    {
+        entity.Area.CollisionLayer &= ~(1u << layer);
+    }
+    public void clearLayers()
+    {
+        entity.Area.CollisionLayer = 0u;
+    }
+    public void setMask(int layer)
+    {
+        entity.Area.CollisionMask |= 1u << layer;
+    }
+    public void clearMask(int layer)
+    {
+        entity.Area.CollisionMask &= ~(1u << layer);
+    }
+    public void clearMasks()
+    {
+        entity.Area.CollisionMask = 0u;
+    }*/
+    
+    private const uint Ally = 1u;
+    private const uint Enemy = 2u;
+    private const uint EnemyBullet = 4u;
+    private const uint AllyBullet = 8u;
+
+    public void setAlly()
+    {
+        entity.SetCollisions(Ally, EnemyBullet);
+    }
+    public void setEnemyBullet()
+    {
+        entity.SetCollisions(EnemyBullet, Ally);
+    }
+    public void setEnemy()
+    {
+        entity.SetCollisions(Enemy, AllyBullet);
+    }
+    public void setAllyBullet()
+    {
+        entity.SetCollisions(AllyBullet, Enemy);
+    }
     // UIElement stuff
     public UIElement panel(float x, float y, float width, float height) => new UIElement(x, y, width, height);
     public void setText(UIElement panel, string text) => panel.Text = text;

@@ -1,11 +1,17 @@
+Doing:
+
+Collisions work! Clean the code up a bit. The area really should be private and just call Entity to tell it to change layers however you do that. I also need to have a way to tell it what to do if there is a collision.
+
 TODO:
 
-I think there was a bug initializing a global variable and setting it inside a function. Look into that.
+I'd really like to change this language to be more C-like. I think I see how it can be done. I need a function that looks through it character by character, checking for {, }, ;, and strings and comments. And also backslashes in the strings.
+I think there was a bug initializing a global variable and setting it inside a function. Do I even want global variables?
 
 Necessary for pre-alpha:
 
-Make it so you can set the sprite and size of spawned objects, and change their position (letting you spawn enemies off screen).
 Put it on itch.io.
+Put it on github.
+Make collisions actually do stuff.
 
 Other:
 

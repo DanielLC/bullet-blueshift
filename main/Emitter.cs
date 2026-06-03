@@ -10,7 +10,7 @@ public partial class Emitter : Entity
 	// path.PointOfReferenceAtTime() will return null if the Entity doesn't exist anymore. I'd add code to check for it, but what's it gonna do, return null?
 	override public PointOfReference GetEndPOR()
 	{
-		return path.PointOfReferenceAtTime(time);
+		return Path.PointOfReferenceAtTime(time);
 	}
 	override public void AddAcceleration(float accel, float radians, float time)
 	{
@@ -27,19 +27,25 @@ public partial class Emitter : Entity
 	override public void UpdateEmitters(float t)
 	{
 		//GD.Print("Emitter.UpdateEmitters");
-		baseEntity.UpdateEmitters(t);
+		BaseEntity.UpdateEmitters(t);
 	}
 
 	override public void NewEmitter(int instructionPointer, Godot.Collections.Array variables)
 	{
 		//GD.Print("Emitter.NewEmitter");
-		baseEntity.NewEmitter(instructionPointer, variables);
+		BaseEntity.NewEmitter(instructionPointer, variables);
 	}
 
 	public Emitter(Entity parent)
 	{
-		path = parent.path;
-		baseEntity = parent.baseEntity;
+		Path = parent.Path;
+		BaseEntity = parent.BaseEntity;
 		parent.AddChild(this);		//Note: I'm not sure about this. Maybe the Plyer should be the parent. Especially if I want Emitters to have sprites.
 	}
+
+    public override void SetCollisions(uint layers, uint collidesWith)
+    {
+        BaseEntity.SetCollisions(layers, collidesWith);
+    }
+
 }
