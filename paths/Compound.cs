@@ -227,12 +227,13 @@ public partial class Compound : Path
 	}
 	//Gets the component that sees e as the present
 
+	// TODO: Use a binary search.
 	public int GetComponentIndex(Event e)
 	{
 		if (GetT(0, e) < 0)
 			return -1;
 		for (int i = 1; i < coevents.Count; ++i)
-			if (GetT(0, e) < 0)
+			if (GetT(i, e) < 0)
 				return i;
 		return -1;
 	}
@@ -306,10 +307,21 @@ public partial class Compound : Path
 	public void Die(Event e)
 	{
 		var v = GetVelocity(e);
+		// If it's already dead, don't kill it.
+		if (v == null)
+			return;
 		endPORs[^1] = new PointOfReference(e, v);
 		events[^1] = endPORs[^1].GetEvent();
 		coevents[^1] = GetCoevent(endPORs[^1]);
 		dead = true;
+	}
+
+	public void Die()
+	{
+		if (dead)
+			return;
+		PointOfReference por = SeenFromRest(Player.Instance.por.GetEvent()).Item1;
+		Die(por.GetEvent());
 	}
 
 	public Event GetEnd()

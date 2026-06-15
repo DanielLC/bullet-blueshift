@@ -1,9 +1,6 @@
-Doing:
-
-Collisions work! Clean the code up a bit. The area really should be private and just call Entity to tell it to change layers however you do that. I also need to have a way to tell it what to do if there is a collision.
-
 TODO:
 
+I want to make it so the player can set scripts to run on collisions. But then they'd also need variables. I think I need to make the language object-oriented.
 I'd really like to change this language to be more C-like. I think I see how it can be done. I need a function that looks through it character by character, checking for {, }, ;, and strings and comments. And also backslashes in the strings.
 I think there was a bug initializing a global variable and setting it inside a function. Do I even want global variables?
 
@@ -11,16 +8,13 @@ Necessary for pre-alpha:
 
 Put it on itch.io.
 Put it on github.
-Make collisions actually do stuff.
 
 Other:
 
-Collisions
 Make it so enemies can have multiple overlapping sprites spinning at different rates
 	Ideally this can be done with the shader, but a less performant and more flexible version can be done by letting emitters have sprites
 Separate compound_shader into shader include files
 Elif statements
-Make it so you can print messages on the screen. Players won't want to use the console, and ideally it could allow dialogue.
 Circular screen
 
 Allowing fields in scripts:

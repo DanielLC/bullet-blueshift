@@ -1,10 +1,11 @@
 subroutine missile(accel, angle, time)
-	setEnemyBullet()
+	setEnemyBullet(1)
 	setParameters("star2.png", 0.02, 2)
 	accelerate(accel, angle, time)
 end
 
 subroutine missile2(accel, angle, accelTime, coastTime)
+	setAllyBullet(1)
 	setParameters("star2.png", 0.02, 2)
 	accelerate(accel, angle, accelTime)
 	accelerate(0, 0, coastTime)
@@ -47,7 +48,7 @@ end
 
 subroutine enemy()
 	displace(0.3, 0)
-	setEnemy()
+	setEnemy(10)
 	setParameters("star2.png", 0.2, 1)
 	#emitter spiral(0.2, 0, goldenAngle, 0.03, 4)
 	emitter zigzagSpiral(0.03, 6, 0, 60, 3, 10, 0.2, 10)
@@ -63,17 +64,18 @@ end
 #It's easier just to use an emitter to shoot. Then I don't have to tie the fire rate to the framerate.
 #I think the problem here is once it gets to the player's current position in spacetime, it assumes they're dead.
 subroutine shoot()
-	var a = 0.4
-	var accelTime = 0.5
-	var coastTime = 2
-	var fireDelay = 0.05
+	var a = 1
+	var accelTime = 0.2
+	var coastTime = 5
+	var fireDelay = 0.15
+	var accuracy = 10
 	
 	while true:
 		#print("Pew!")
 		var dir = mouseDirection()
 		#print(dir)
 		if !isNaN(dir):
-			spawn missile2(a, dir, accelTime, coastTime)
+			spawn missile2(a, dir + accuracy * (random() - 0.5), accelTime, coastTime)
 		end
 		wait(fireDelay)
 	end
@@ -85,19 +87,12 @@ subroutine exploder(size, brightness)
 	explode(size, brightness)
 end
 
-subroutine testBullet(dist)
-	setParameters("star2.png", 0.03, 3)
-	displace(dist, 0)
-	setEnemyBullet()
-	accelerate(0, 0, 10)
-end
-
 subroutine init()
 	setParameters("ship.png", 0.03, 0)
 	setAlly()
-	spawn testBullet(0.1)
-	#spawn enemy()
-	#emitter shoot()
+	#spawn testBullet(0.1)
+	spawn enemy()
+	emitter shoot()
 	#var ui = panel(0,0.1,0.2,0.3)
 	#setColor(ui, "red")
 	#setText(ui, "red")

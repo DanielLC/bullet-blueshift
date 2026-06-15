@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 public partial class Entity : Node2D
 {
@@ -14,7 +15,9 @@ public partial class Entity : Node2D
 	private static readonly Dictionary<string, Texture2D> textureCache = [];
 	private static readonly PackedScene ExplosionScene = (PackedScene)ResourceLoader.Load("res://main/Explosion.tscn");
 	private Area2D area;
-	public CircleShape2D shape;
+	private CircleShape2D shape;
+	public ScriptContext scriptContext;
+	public float hp;
 
 	public void Explode(float size, float brightness)
 	{
@@ -99,6 +102,7 @@ public partial class Entity : Node2D
 
 	public void Initialize(Player player, float size, PointOfReference pointOfReference, float rotationSpeed)
 	{
+		SetPosition(player.por.Inverse() * pointOfReference);
 		BaseEntity = this;
 		this.player = player;
 		//Sprite2D sprite = GetNode<Sprite2D>("Sprite2D");
@@ -112,7 +116,7 @@ public partial class Entity : Node2D
 			shader.SetShaderParameter("spin_speed", rotationSpeed);
 		}
 		sprite.Scale = new Vector2(size, size) * 4;
-		this.Size = size;
+		Size = size;
 		Path = new Compound(shader, pointOfReference, rotationSpeed);
 		area = GetNode<Area2D>("Area2D");
 		area.AreaEntered += OnAreaEntered;
@@ -174,6 +178,17 @@ public partial class Entity : Node2D
 			return;
 		}
 		(var relativePOR, float t) = Path.Seen(player.por);
+		SetPosition(relativePOR);
+		//sprite.Modulate = GetColor(GetDoppler(relativePOR));
+		if (shader != null)
+		{
+			UpdateShader();
+		}
+		UpdateEmitters(t);
+	}
+
+	private void SetPosition(PointOfReference relativePOR)
+	{
 		if (relativePOR == null)
 		{
 			//For now I'll just move it out of view.
@@ -181,14 +196,7 @@ public partial class Entity : Node2D
 			return; //TODO: Make it invisible or something.
 		}
 		Event pos = relativePOR.GetEvent();
-		Velocity velocity = relativePOR.GetVelocity();
 		Position = new Vector2(pos.x, pos.y);
-		//sprite.Modulate = GetColor(GetDoppler(relativePOR));
-		if (shader != null)
-		{
-			UpdateShader();
-		}
-		UpdateEmitters(t);
 	}
 
 	private void UpdateShader()
@@ -252,13 +260,56 @@ public partial class Entity : Node2D
 	{
 		return Path.GetEndPOR();
 	}
-	private void OnAreaEntered(Area2D area)
+
+	public const uint Ally = 1u;
+	public const uint Enemy = 2u;
+	public const uint EnemyBullet = 4u;
+	public const uint AllyBullet = 8u;
+	private void OnAreaEntered(Area2D otherArea)
 	{
-        GD.Print($"{this.area.CollisionLayer} collision with {area.CollisionLayer}");
+		//if(Path.dead) return;
+		//GD.Print($"Entity.OnAreaEntered: {area.CollisionLayer} collision with {otherArea.CollisionLayer}");
+		//GD.Print($"Entity.OnAreaEntered: {area.GlobalPosition} collision with {otherArea.GlobalPosition}");
+		var otherShape = (CircleShape2D)area.GetNode<CollisionShape2D>("CollisionShape2D").Shape;
+		//GD.Print(shape.Radius + otherShape.Radius);
+		//GD.Print($"Entity.OnAreaEntered: {area.GlobalScale} collision with {otherArea.GlobalScale}");
+		// If it's an ally or enemy, decrease the hp and then die.
+		if ((area.CollisionLayer & 0b11) != 0)
+		{
+			Entity other = otherArea.GetParent<Entity>();
+			// GD.Print("Entity.OnAreaEntered: ", other.scriptContext);
+			hp -= other.hp;
+			//GD.Print("Entity.OnAreaEntered: hp = ", hp);
+			GD.Print("Entity.OnAreaEntered: ", Engine.GetFramesDrawn()); 
+			if (hp <= 0)
+			{
+				// GD.Print($"{area.CollisionLayer == Ally}");
+				if (area.CollisionLayer == Ally)
+				{
+					GD.Print("Entity.OnAreaEntered: Player Dead"); // TODO: Figure out something cooler. Maybe have an explosion clear out all the enemies, starting you over.
+				}
+				else
+				{
+					// This happens twice on different frames. Are they not dying immediately?
+					GD.Print("Entity.OnAreaEntered: Enemy Dead ", Engine.GetFramesDrawn()); 
+					Die();
+				}
+			}
+		}
+		else
+		{
+			Die();
+		}
+	}
+	public void Die()
+	{
+		Path.Die();
+		// TODO: The object shouldn't be destroyed instantly. It should stick around as it's destroyed.
+		QueueFree();
 	}
 	virtual public void SetCollisions(uint layers, uint collidesWith)
 	{
-        area.CollisionLayer = layers;
-        area.CollisionMask = collidesWith;
+		area.CollisionLayer = layers;
+		area.CollisionMask = collidesWith;
 	}
 }

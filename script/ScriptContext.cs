@@ -122,28 +122,36 @@ public partial class ScriptContext : RefCounted
     {
         entity.Area.CollisionMask = 0u;
     }*/
-    
-    private const uint Ally = 1u;
-    private const uint Enemy = 2u;
-    private const uint EnemyBullet = 4u;
-    private const uint AllyBullet = 8u;
 
-    public void setAlly()
+    public void setAlly(float hp)
     {
-        entity.SetCollisions(Ally, EnemyBullet);
+        entity.SetCollisions(Entity.Ally, Entity.EnemyBullet);
+        entity.hp = hp;
     }
-    public void setEnemyBullet()
+    public void setEnemyBullet(float hp)
     {
-        entity.SetCollisions(EnemyBullet, Ally);
+        entity.SetCollisions(Entity.EnemyBullet, Entity.Ally);
+        entity.hp = hp;
     }
-    public void setEnemy()
+    public void setEnemy(float hp)
     {
-        entity.SetCollisions(Enemy, AllyBullet);
+        entity.SetCollisions(Entity.Enemy, Entity.AllyBullet);
+        entity.hp = hp;
     }
-    public void setAllyBullet()
+    public void setAllyBullet(float hp)
     {
-        entity.SetCollisions(AllyBullet, Enemy);
+        entity.SetCollisions(Entity.AllyBullet, Entity.Enemy);
+        entity.hp = hp;
     }
+
+    public void setAlly() => setAlly(0);
+    public void setEnemyBullet() => setEnemyBullet(0);
+    public void setEnemy() => setEnemy(0);
+    public void setAllyBullet() => setAllyBullet(0);
+    public float getHP() => entity.hp;
+    public void setHP(float hp) => entity.hp = hp;
+    public void die() => entity.Die();
+
     // UIElement stuff
     public UIElement panel(float x, float y, float width, float height) => new UIElement(x, y, width, height);
     public void setText(UIElement panel, string text) => panel.Text = text;
@@ -152,10 +160,10 @@ public partial class ScriptContext : RefCounted
     public void destroyPanel(UIElement panel) => panel.QueueFree();
 
     // Math constants
-    public const float e = Mathf.E;
-    public const float pi = Mathf.Pi;
-    public const float goldenAngle = 137.50776405003785f; //180 * (3 - Mathf.Sqrt(5));
-    public const float nan = float.NaN;
+    public float e = Mathf.E;
+    public float pi = Mathf.Pi;
+    public float goldenAngle = 137.50776405003785f; //180 * (3 - Mathf.Sqrt(5));
+    public float nan = float.NaN;
     // Math functions
     public bool isNaN(float x) => float.IsNaN(x);
     public float sqrt(float x) => Mathf.Sqrt(x);

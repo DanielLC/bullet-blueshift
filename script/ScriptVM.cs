@@ -25,6 +25,7 @@ public partial class ScriptVM : RefCounted
         variables = vars ?? [];
         this.entity = entity;
         context = new ScriptContext(this);
+        entity.scriptContext = context;
     }
     private readonly struct StackElement(Array variablesOutOfScope, int variablesInScope, int jumpTo)
     {
@@ -38,6 +39,8 @@ public partial class ScriptVM : RefCounted
     // Returns true to continue running later, and false if it's time to die.
     public bool Run()
     {
+        if (entity.Path.dead)
+            return false;
         timeToPause = false;
         for (int _ = 0; _ < 256; ++_)
         {
@@ -95,7 +98,6 @@ public partial class ScriptVM : RefCounted
                         // TODO: It might be better to loop through this explicitly.
                         Array newVars = variables[0..instruction.b].Duplicate(true);
                         newVars.AddRange((Array)Execute(instruction));
-                        //GD.Print("ScriptVM.Run: ", instruction.line+1, ": ", string.Join(", ", newVars));
                         var por = entity.GetEndPOR();
                         // If that point of reference doesn't exist, it's presumably an emitter with a dead entity.
                         // But what if it's not? There could be something else that causes this. And with this code, the game won't crash and I'll probably never know.
