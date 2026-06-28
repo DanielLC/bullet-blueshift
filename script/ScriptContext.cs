@@ -13,10 +13,10 @@ public partial class ScriptContext : RefCounted
         entity = scriptVM.entity;
     }
 
-    // public void explode(float size, float brightness)
-    // {
-    //     entity.Explode(size, brightness);
-    // }
+    public void explode(float size, float brightness)
+    {
+        entity.Explode(size, brightness);
+    }
     public void displace(float r, float degrees, float time)
     {
         entity.Translate(new Event(r * sin(degrees), -r * cos(degrees), time));

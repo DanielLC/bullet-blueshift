@@ -4,9 +4,12 @@ render_mode unshaded;
 uniform mat4 por;
 uniform mat4 por_inverse;
 uniform float scale;			// pixels per light second
-uniform float size;				// size of the sprite
-uniform float spin_speed;
-uniform sampler2D texture_sampler : source_color;
+
+const int MAX_SPRITES = 4;
+uniform int sprite_count;
+uniform float size[MAX_SPRITES];				// size of the sprite
+uniform float spin_speed[MAX_SPRITES];
+uniform sampler2D texture_sampler[MAX_SPRITES] : source_color;
 
 const int MAX_SEGMENTS = 64;
 uniform int segment_count;
@@ -110,8 +113,8 @@ EventAndPOR to_local_spacetime(int i, vec4 event) {
 		return to_local_spacetime_hyperbola(path_transform_inverse[i]*event, accels[i]);
 }
 
-vec4 rotate_position(int component, vec4 event) {
-	float total_rads = rads[component] + event.z * spin_speed;
+vec4 rotate_position(int component, vec4 event, float spin) {
+	float total_rads = rads[component] + event.z * spin;
 	float s = sin(total_rads);
 	float c = cos(total_rads);
 
@@ -139,8 +142,8 @@ vec4 add_velocity(vec4 v1, vec4 v2) {
 	return vec4(loretz * v2.xyz, 0);
 }
 
-vec4 get_rotational_velocity(vec4 event) {
-	vec2 spun = spin_speed * vec2(event.y, -event.x);
+vec4 get_rotational_velocity(vec4 event, float spin) {
+	vec2 spun = spin * vec2(event.y, -event.x);
 	float gamma2 = 1.0 - dot(spun, spun);
 	if(gamma2 < 0.0)
 		discard;
@@ -180,13 +183,13 @@ int get_component(vec4 event) {
 
 //drawing functions
 //Originally this just returned if it's there, but I need to have it return brightness and transparency.
-vec2 check_if_there(vec4 e2) {
+vec2 check_if_there(vec4 e2, sampler2D sampler, float sz) {
 	//if(e2.x*e2.x + e2.y*e2.y > size*size)
 	//	discard;
 	e2 *= sqrt(2);
-	if(e2.x < -size || e2.x > size || e2.y < -size || e2.y > size)
+	if(e2.x < -sz || e2.x > sz || e2.y < -sz || e2.y > sz)
 		discard;
-	vec4 color = texture(texture_sampler, e2.xy/(2.0*size) + vec2(0.5,0.5));
+	vec4 color = texture(sampler, e2.xy/(2.0*sz) + vec2(0.5,0.5));
 	if(color.x == 0.0 || color.w == 0.0)
 		discard;
 	return vec2(color.x, color.w);
@@ -253,6 +256,34 @@ vec4 int_to_color(int value) {
     return vec4(r, g, b, 1.0);
 }
 
+vec4 get_color(int component, EventAndPOR e2, vec4 foo, int sprite_number) {
+	vec4 e3 = rotate_position(component, e2.event, spin_speed[sprite_number]);
+
+	// Figure out if it even needs to draw that pixel
+	vec2 brightnessAndAlpha = check_if_there(e3, texture_sampler[sprite_number], size[sprite_number]);
+	float brightness = brightnessAndAlpha.x;
+	float alpha = brightnessAndAlpha.y;
+	//return(int_to_color(component));
+
+	// === baz: Velocity at that event ===
+	//vec4 baz = get_velocity_at(component, bar);
+
+	// Add in velocity from rotation.
+	vec4 baz = path_transform[component] * vec4(e2.pointOfReferenceInverse * get_rotational_velocity(e2.event, spin_speed[sprite_number]).xyz, 0);
+
+	// === quux: Transform velocity to observer frame ===
+	vec4 quux = por_inverse * baz;
+
+	// === doppler: Red/blue shift ===
+	float doppler = get_doppler(foo, quux);
+
+	// === color based on doppler shift ===
+	vec4 color = vec4(get_color(doppler) * brightness, alpha);
+	//vec4 color = vec4(get_color_blackbody(6700.0 * doppler, brightness), alpha);
+
+	return color;
+}
+
 vec4 draw(vec2 screen_pos) {
 	vec2 rel = screen_pos - vec2(0.5);
 
@@ -273,30 +304,24 @@ vec4 draw(vec2 screen_pos) {
 	// For a hyperbola, e2.event.z is always 0.
 	EventAndPOR e2 = to_local_spacetime(component, bar);
 
-	vec4 e3 = rotate_position(component, e2.event);
+	vec4 color = vec4(0.0);
 
-	// Figure out if it even needs to draw that pixel
-	vec2 brightnessAndAlpha = check_if_there(e3);
-	float brightness = brightnessAndAlpha.x;
-	float alpha = brightnessAndAlpha.y;
-	//return(int_to_color(component));
+	for (int i = 0; i < sprite_count; ++i)
+	{
+		vec4 sprite = get_color(component, e2, foo, i);
 
-	// === baz: Velocity at that event ===
-	//vec4 baz = get_velocity_at(component, bar);
+		// Alpha compositing.
+		color.rgb += (1.0 - color.a) * sprite.a * sprite.rgb;
+		color.a += (1.0 - color.a) * sprite.a;
 
-	// Add in velocity from rotation.
-	vec4 baz = path_transform[component] * vec4(e2.pointOfReferenceInverse * get_rotational_velocity(e2.event).xyz, 0);
+		if (color.a > 0.999)
+			break;
 
-	// === quux: Transform velocity to observer frame ===
-	vec4 quux = por_inverse * baz;
-
-	// === doppler: Red/blue shift ===
-	float doppler = get_doppler(foo, quux);
-
-	// === color based on doppler shift ===
-	vec4 color = vec4(get_color(doppler) * brightness, alpha);
-	//vec4 color = vec4(get_color_blackbody(6700.0 * doppler, brightness), alpha);
-
+		// Additive version:
+		// color.rgb += sprite.a * sprite.rgb;
+		// color.a = max(color.a, sprite.a);
+	}
+	
 	return color;
 }
 

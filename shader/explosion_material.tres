@@ -1,0 +1,11 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://dk28b03ao7x4r"]
+
+[ext_resource type="Shader" uid="uid://b0spe48oryvtg" path="res://shader/explosion_shader.gdshader" id="1_1xc0y"]
+
+[resource]
+shader = ExtResource("1_1xc0y")
+shader_parameter/por = Projection(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
+shader_parameter/por_inverse = Projection(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
+shader_parameter/event = Vector4(0, 0, 0, 0)
+shader_parameter/velocity = Vector4(0, 0, 0, 0)
+shader_parameter/radius = 0.0

@@ -36,7 +36,7 @@ public partial class Player : Node2D
             por = PointOfReference.IDENTITY;
 
             ScriptedLevel();
-            playerEntity = SpawnEntity(PLAYER_SIZE, PLAYER_ROTATION, por, -1);
+            playerEntity = SpawnEntity(PLAYER_SIZE, PLAYER_ROTATION, por, -1, null, true);
             playerEntity.Name = "Player Entity";
             //playerEntity.NewEmitter(0, []);
             playerScript = new ScriptVM(playerEntity);
@@ -135,7 +135,7 @@ public partial class Player : Node2D
         }
     }
 
-    public static Entity SpawnEntity(float size, float rotationSpeed, PointOfReference pointOfReference, int instructionPointer = 0, Godot.Collections.Array variables = null)
+    public static Entity SpawnEntity(float size, float rotationSpeed, PointOfReference pointOfReference, int instructionPointer = 0, Godot.Collections.Array variables = null, bool isPlayer = false)
     {
         if (instance.GetChildCount() >= SPAWN_CAP)
         {
@@ -145,7 +145,7 @@ public partial class Player : Node2D
             return null;
         }
         Entity entity = (Entity)EntityScene.Instantiate();
-        entity.Initialize(instance, size, pointOfReference, rotationSpeed);
+        entity.Initialize(instance, size, pointOfReference, rotationSpeed, isPlayer);
         instance.AddChild(entity);
         if (instructionPointer > -1)
         {

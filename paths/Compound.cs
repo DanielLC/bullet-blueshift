@@ -5,13 +5,13 @@ using System.Diagnostics;
 
 public partial class Compound : Path
 {
-	private List<Transform> components;
+	protected List<Transform> components;
 	//I'm thinking maybe all these lists should be stored inside Transform.
-	private List<float> times;
-	private List<Event> events;
-	private List<Vector4> coevents;
-	private List<PointOfReference> endPORs;
-	private ShaderMaterial shader;
+	protected List<float> times;
+	protected List<Event> events;
+	protected List<Vector4> coevents;
+	protected List<PointOfReference> endPORs;
+	protected ShaderMaterial shader;
 	public float rotationSpeed;
 	public bool dead;
 	public float EndTime => times[^1];
@@ -58,16 +58,16 @@ public partial class Compound : Path
 
 	public Compound(ShaderMaterial shader, float rotationSpeed) : this(shader, PointOfReference.IDENTITY, rotationSpeed) { }
 
-	//TODO: This probably has some off by one errors.
-	//And really, it should be looking for just the visible components.
-	public void UpdateShader()
+	public virtual void UpdateShader()
 	{
 		if (components.Count >= 64)
 		{
 			throw new Exception("Too many components for shader. Fix it so it's not trying to show all these components at once.");
 		}
 		shader.SetShaderParameter("segment_count", components.Count + 1);
-		shader.SetShaderParameter("coevents", coevents.ToArray());
+		var visibleCoevents = new Vector4[coevents.Count];
+		coevents.CopyTo(visibleCoevents);
+		shader.SetShaderParameter("coevents", visibleCoevents);
 		var pathTransforms = new float[components.Count * 16];
 		var pathTransformInverses = new float[components.Count * 16];
 		var rotations = new float[components.Count];
@@ -145,9 +145,10 @@ public partial class Compound : Path
 		return Event(s, i);
 	}
 
-	//Checks if every part of the ship at the end of the first component is in the past of e.
-	//Automatically removes the first component if it is. And if there's nothing left, tells the Entity to destroy itself.
-	public bool CheckIfAllInPast(Event e, float r, ShaderMaterial shader)
+	// Checks if every part of the ship at the end of the first component is in the past of e.
+	// Automatically removes the first component if it is. And if there's nothing left, tells the Entity to destroy itself.
+	// TODO: I need to do something a little different for the Player. It should automatically remove old components, but I'm not exactly clear on how old, and it should track how far into the past to pass to the shader.
+	public virtual bool CheckIfAllInPast(Event e, float r)
 	{
 		if (components.Count == 0)
 		{
@@ -155,25 +156,23 @@ public partial class Compound : Path
 		}
 		var relativeEvent = endPORs[1].Inverse() * e;
 		float tMinusR = relativeEvent.t - r;
-		//GD.Print(tMinusR);
-		//GD.Print(Mathf.Sqrt(relativeEvent.x * relativeEvent.x + relativeEvent.y * relativeEvent.y));
-		//GD.Print();
-		if (tMinusR > 0 && tMinusR * tMinusR > relativeEvent.x * relativeEvent.x + relativeEvent.y * relativeEvent.y)
+		while (tMinusR > 0 && tMinusR * tMinusR > relativeEvent.x * relativeEvent.x + relativeEvent.y * relativeEvent.y)
 		{
-			if (components.Count == 0)
+			if (components.Count == 1)
 			{
-				//The Entity parenting this will be removed. No point in doing anything with components etc.
+				// The Entity parenting this will be removed. No point in doing anything with components etc.
 				return true;
 			}
-			//It's entirely in the past and the first segment can safely be removed.
+			// It's entirely in the past and the first segment can safely be removed.
+			// TODO: This could be improved by using a struct for all these and putting it in a queue.
 			components.RemoveAt(0);
 			times.RemoveAt(0);
 			events.RemoveAt(0);
 			coevents.RemoveAt(0);
 			endPORs.RemoveAt(0);
-			//I may want to loop instead of having it just end here in case more than one component disappears, but it's probably not worth it.
-			UpdateShader();
-			return false;
+			
+			relativeEvent = endPORs[1].Inverse() * e;
+			tMinusR = relativeEvent.t - r;
 		}
 		return false;
 	}

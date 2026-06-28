@@ -100,7 +100,7 @@ public partial class Entity : Node2D
 		return Path.PointOfReferenceAtTime(s);
 	}
 
-	public void Initialize(Player player, float size, PointOfReference pointOfReference, float rotationSpeed)
+	public void Initialize(Player player, float size, PointOfReference pointOfReference, float rotationSpeed, bool isPlayer = false)
 	{
 		SetPosition(player.por.Inverse() * pointOfReference);
 		BaseEntity = this;
@@ -117,7 +117,11 @@ public partial class Entity : Node2D
 		}
 		sprite.Scale = new Vector2(size, size) * 4;
 		Size = size;
-		Path = new Compound(shader, pointOfReference, rotationSpeed);
+		//GD.Print("Entity.Initialize: " + isPlayer);
+		if (isPlayer)
+			Path = new PlayerCompound(shader, pointOfReference, rotationSpeed);
+		else
+			Path = new Compound(shader, pointOfReference, rotationSpeed);
 		area = GetNode<Area2D>("Area2D");
 		area.AreaEntered += OnAreaEntered;
 		var collision = area.GetNode<CollisionShape2D>("CollisionShape2D");
@@ -172,7 +176,7 @@ public partial class Entity : Node2D
 
 	public void Update()
 	{
-		if (Path.CheckIfAllInPast(player.por.GetEvent(), Size, shader))
+		if (Path.CheckIfAllInPast(player.por.GetEvent(), Size))
 		{
 			QueueFree();
 			return;
