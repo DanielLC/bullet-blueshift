@@ -122,10 +122,9 @@ subroutine move(a, dist, dir)
 end
 
 subroutine explodingStarBullet(a, dist, n)
-	print([a, dist, n])
 	#Calling this seems to override the perameters of the function you're in. This is a big bug.
 	call move(a, dist, 0)
-	print([a, dist, n])
+	#Rotate didn't work
 	rotate(36)
 	call dottedLine(a, dist * 1.902113032590307, n)
 end

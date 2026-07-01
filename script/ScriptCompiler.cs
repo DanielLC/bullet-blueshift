@@ -18,6 +18,9 @@ public partial class ScriptCompiler : Node
     // I need a list of subroutine names so that it can detect when you're writing to a subroutine. Then I need to store a list of commands that jump to a subroutine and which one they're going to, and a dictionary of subroutines and their positions.
     private string[] subroutineNames = [];
     private List<Tuple<int, string>> subroutineCalls = [];
+    // This maps the function names to what will be placed in a and b in their instructions. Currently, a is the position of the function.
+    // b was how many variables in scope there were, but I realized that was a terrible idea. But I'm leaving this in place so I could add something else,
+    // like what variable the return value goes to. There isn't yet a way to return anything.
     private Dictionary<string, Tuple<int, int>> subroutineData = new();
     private enum Jump : byte
     {

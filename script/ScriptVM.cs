@@ -27,10 +27,9 @@ public partial class ScriptVM : RefCounted
         context = new ScriptContext(this);
         entity.scriptContext = context;
     }
-    private readonly struct StackElement(Array variablesOutOfScope, int variablesInScope, int jumpTo)
+    private readonly struct StackElement(Array variables, int jumpTo)
     {
-        public readonly Array variablesOutOfScope = variablesOutOfScope;
-        public readonly int variablesInScope = variablesInScope;
+        public readonly Array variables = variables;
         public readonly int returnTo = jumpTo;
     }
     // Runs the script until it reaches a point where it pauses or the script finishes.
@@ -86,9 +85,9 @@ public partial class ScriptVM : RefCounted
                     {
                         //GD.Print("ScriptVM.Run Before: ", instruction.b, " ", string.Join(", ", variables));
                         Array newVars = (Array)Execute(instruction);
-                        stack.Push(new StackElement(variables[instruction.b..], instruction.b, instructionPointer + 1));
-                        variables.Resize(instruction.b);
-                        variables.AddRange(newVars);
+                        stack.Push(new StackElement(variables, instructionPointer + 1));
+                        //GD.Print("ScriptVM.Run: pushing variables " + variables + " onto stack");
+                        variables = newVars;
                         instructionPointer = instruction.a;
                         //GD.Print("ScriptVM.Run After: ", instruction.b, " ", string.Join(", ", variables));
                         continue;
@@ -129,7 +128,11 @@ public partial class ScriptVM : RefCounted
                     else
                     {
                         var stackElement = stack.Pop();
-                        variables = variables[stackElement.variablesInScope..] + stackElement.variablesOutOfScope;
+                        variables = stackElement.variables;
+                        /*if (variables == null)
+                            GD.Print("ScriptVM.Run: popping empty variables from stack");
+                        else
+                            GD.Print("ScriptVM.Run: popping variables " + variables + " from stack");*/
                         instructionPointer = stackElement.returnTo;
                         continue;
                     }
