@@ -90,7 +90,7 @@ end
 subroutine dot(a, accelTime, restTime)
 	setParameters("star2.png", 0.03, 3)
 	accelerate(a, 180, accelTime)
-	accelerate(0, 0, restTime)
+	accelerate(0, 0, restTime+1)
 end
 
 subroutine dottedLine(a, dist, n)
@@ -105,7 +105,7 @@ subroutine dottedLine(a, dist, n)
 
 	setParameters("star2.png", 0.03, 0)
 	accelerate(a, 0, tau)
-	while n > 0:
+	while n > 1:
 		print("Spawning dot")
 		spawn dot(a, tau, n * restTime)
 		accelerate(0, 0, restProperTime)
@@ -125,14 +125,23 @@ subroutine explodingStarBullet(a, dist, n)
 	#Calling this seems to override the perameters of the function you're in. This is a big bug.
 	call move(a, dist, 0)
 	#Rotate didn't work
-	rotate(36)
+	rotate(180-18)
 	call dottedLine(a, dist * 1.902113032590307, n)
+end
+
+subroutine explodingStar(a, dist, n)
+	var i = 0
+	while i < 5:
+		spawn explodingStarBullet(a, dist, n)
+		rotate(72)
+		i += 1
+	end
 end
 
 subroutine init()
 	setParameters("ship.png", 0.06, 0)
 	setAlly()
-	spawn explodingStarBullet(1, 0.3, 5)
+	spawn explodingStar(1, 0.3, 10)
 	#spawn dot(0.2, 1, 10)
 	#spawn testBullet(0.1)
 	#spawn enemy()

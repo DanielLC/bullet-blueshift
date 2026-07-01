@@ -32,7 +32,7 @@ public partial class ScriptContext : RefCounted
     }
     public void rotate(float degrees)
     {
-        entity.Rotate(degrees * DEG_TO_RAD);
+        entity.Path.Rotate(degrees * DEG_TO_RAD);
     }
     // This part is just ScriptContext. Emitters can't accelerate.
     public void accelerate(float acceleration, float degrees, float time)

@@ -48,6 +48,7 @@ public partial class Compound : Path
 
 	public void Rotate(float radians)
 	{
+		GD.Print($"Compound.Rotate: Rotated by {radians} radians");
 		Transform(PointOfReference.FromRotation(radians));
 	}
 
