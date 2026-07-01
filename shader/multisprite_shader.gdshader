@@ -321,7 +321,7 @@ vec4 draw(vec2 screen_pos) {
 		// color.rgb += sprite.a * sprite.rgb;
 		// color.a = max(color.a, sprite.a);
 	}
-	
+
 	return color;
 }
 

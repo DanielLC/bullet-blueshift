@@ -7,6 +7,7 @@ public partial class ScriptContext : RefCounted
     private static RandomNumberGenerator rng = new();
     private Entity entity;
     private ScriptVM scriptVM;
+    private const float DEG_TO_RAD = Mathf.Pi / 180;
     public ScriptContext(ScriptVM scriptVM)
     {
         this.scriptVM = scriptVM;
@@ -29,10 +30,14 @@ public partial class ScriptContext : RefCounted
     {
         entity.SetParameters(sprite, size, rotationSpeed, scriptVM.InstructionPointer);
     }
-    //This part is just ScriptContext. Emitters can't accelerate.
+    public void rotate(float degrees)
+    {
+        entity.Rotate(degrees * DEG_TO_RAD);
+    }
+    // This part is just ScriptContext. Emitters can't accelerate.
     public void accelerate(float acceleration, float degrees, float time)
     {
-        entity.AddAcceleration(acceleration, (degrees + 180) * pi / 180, time);
+        entity.AddAcceleration(acceleration, (degrees + 180) * DEG_TO_RAD, time);
         scriptVM.timeToPause = true;
     }
     public void wait(float time)
@@ -44,8 +49,23 @@ public partial class ScriptContext : RefCounted
     {
         scriptVM.nextFrame = true;
     }
-    //Everything here should be in an Emitter class that ScriptContext extends.
-    //TODO: Modify this to also show it on the screen.
+    // Here's some generally useful functions copied from the script in my old program.
+    public float accelerationFromDistanceAndTime(float distance, float time)
+    {
+        return 2 / (time * time / distance - distance);
+    }
+
+    public float speedFromAccelerationAndTime(float acceleration, float time)
+    {
+        return 1 / sqrt(1 + 1 / (acceleration * acceleration * time * time));
+    }
+
+    public float gamma(float v)
+    {
+        return 1 / sqrt(1 - v * v);
+    }
+    // Everything here should be in an Emitter class that ScriptContext extends.
+    // TODO: Modify this to also show it on the screen.
     public void print(params object[] args)
     {
         GD.Print(string.Concat(args));
@@ -162,7 +182,7 @@ public partial class ScriptContext : RefCounted
     // Math constants
     public float e = Mathf.E;
     public float pi = Mathf.Pi;
-    public float goldenAngle = 137.50776405003785f; //180 * (3 - Mathf.Sqrt(5));
+    public float goldenAngle = 137.50776405003785f; // 180 * (3 - Mathf.Sqrt(5));
     public float nan = float.NaN;
     // Math functions
     public bool isNaN(float x) => float.IsNaN(x);
@@ -177,9 +197,9 @@ public partial class ScriptContext : RefCounted
     public float round(float x) => Mathf.Round(x);
     public float mod(float a, float b) => a % b;
     // Trig
-    public float sin(float x) => Mathf.Sin(x * pi / 180);
-    public float cos(float x) => Mathf.Cos(x * pi / 180);
-    public float tan(float x) => Mathf.Tan(x * pi / 180);
+    public float sin(float x) => Mathf.Sin(x * DEG_TO_RAD);
+    public float cos(float x) => Mathf.Cos(x * DEG_TO_RAD);
+    public float tan(float x) => Mathf.Tan(x * DEG_TO_RAD);
     public float asin(float x) => 180 / pi * Mathf.Asin(x);
     public float acos(float x) => 180 / pi * Mathf.Acos(x);
     public float atan(float x) => 180 / pi * Mathf.Atan(x);

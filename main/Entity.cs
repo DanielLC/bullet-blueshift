@@ -284,7 +284,7 @@ public partial class Entity : Node2D
 			// GD.Print("Entity.OnAreaEntered: ", other.scriptContext);
 			hp -= other.hp;
 			//GD.Print("Entity.OnAreaEntered: hp = ", hp);
-			GD.Print("Entity.OnAreaEntered: ", Engine.GetFramesDrawn()); 
+			GD.Print("Entity.OnAreaEntered: ", Engine.GetFramesDrawn());
 			if (hp <= 0)
 			{
 				// GD.Print($"{area.CollisionLayer == Ally}");
@@ -295,7 +295,7 @@ public partial class Entity : Node2D
 				else
 				{
 					// This happens twice on different frames. Are they not dying immediately?
-					GD.Print("Entity.OnAreaEntered: Enemy Dead ", Engine.GetFramesDrawn()); 
+					GD.Print("Entity.OnAreaEntered: Enemy Dead ", Engine.GetFramesDrawn());
 					Die();
 				}
 			}

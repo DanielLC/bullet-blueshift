@@ -87,12 +87,57 @@ subroutine exploder(size, brightness)
 	explode(size, brightness)
 end
 
+subroutine dot(a, accelTime, restTime)
+	setParameters("star2.png", 0.03, 3)
+	accelerate(a, 180, accelTime)
+	accelerate(0, 0, restTime)
+end
+
+subroutine dottedLine(a, dist, n)
+	var x = dist/(2.0*n)
+	var t = sqrt(pow(x + 1.0/a, 2) - 1.0/(a*a))
+	var tau = asinh(t*a)
+	var v = tanh(a*tau)
+	var gamma = 1.0/sqrt(1-v*v)
+	var restTime = 2.0*x/v
+	var restProperTime = restTime/gamma
+	print([a, dist, n, x, t, tau, v, gamma, restTime, restProperTime])
+
+	setParameters("star2.png", 0.03, 0)
+	accelerate(a, 0, tau)
+	while n > 0:
+		print("Spawning dot")
+		spawn dot(a, tau, n * restTime)
+		accelerate(0, 0, restProperTime)
+		n -= 1
+	end
+	call dot(a, tau, 0)
+end
+
+subroutine move(a, dist, dir)
+	var t = sqrt(pow(dist*0.5 + 1.0/a, 2) - 1.0/(a*a))
+	var tau = asinh(t*a)
+	accelerate(a, dir, tau)
+	accelerate(a, dir+180, tau)
+end
+
+subroutine explodingStarBullet(a, dist, n)
+	print([a, dist, n])
+	#Calling this seems to override the perameters of the function you're in. This is a big bug.
+	call move(a, dist, 0)
+	print([a, dist, n])
+	rotate(36)
+	call dottedLine(a, dist * 1.902113032590307, n)
+end
+
 subroutine init()
-	setParameters("ship.png", 0.03, 0)
+	setParameters("ship.png", 0.06, 0)
 	setAlly()
+	spawn explodingStarBullet(1, 0.3, 5)
+	#spawn dot(0.2, 1, 10)
 	#spawn testBullet(0.1)
 	#spawn enemy()
-	explode(2, 1)
+	#explode(2, 1)
 	#emitter shoot()
 	#var ui = panel(0,0.1,0.2,0.3)
 	#setColor(ui, "red")
