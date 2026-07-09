@@ -1,6 +1,8 @@
 shader_type canvas_item;
 render_mode unshaded;
 
+#include "color.gdshaderinc"
+
 uniform mat4 por;
 uniform mat4 por_inverse;
 uniform float scale;			// pixels per light second
@@ -196,54 +198,6 @@ float get_doppler(vec4 e, vec4 v) {
 	//if(e.xy == vec2(0,0))
 	//	return 1.0;
 	return v.z*(1.0-(v.x*e.x+v.y*e.y)/sqrt(e.x*e.x+e.y*e.y));
-}
-
-float fade(float t) {
-	//This uses a cosine function to fade from 0 to 1 without suddenly starting and stopping at the end.
-	//return (1.0-cos(PI*t))*0.5;
-	//This is the square root of the last one (because trig identities), and it's used to undo gamma correction weirdness that otherwise makes non-pure colors darker.
-	return sin(PI*t*.5);
-}
-
-/*vec3 get_color_blackbody(float ratio) {
-	float temperature = 0.25 * ratio;
-	float brightness = 100.0;
-	vec3 freq = vec3(1.0, pow(2, 1.0/3.0), pow(2, 2.0/3.0));
-	//vec3 freq = vec3(1.0, 2.0, 4.0);
-	return freq*freq*freq / (exp(freq/temperature) - vec3(1.0)) * brightness;
-}*/
-
-vec3 get_color(float ratio) {
-	float original_wavelength = sqrt(2.0);
-	float original_intensity = 1.0;
-
-	float shifted_wavelength = log2(original_wavelength * ratio) * 5.0 - 1.0;
-	float shifted_intensity = original_intensity; // divide by ratio if you want intensity shift
-
-	vec3 rgb = vec3(0.0,0.0,0.0);
-	float lower = floor(shifted_wavelength);
-	float higher = lower + 1.0;
-	float t = shifted_wavelength - lower;
-
-	if (0.0 <= lower && lower < 3.0)
-		rgb[int(lower)] = fade(1.0 - t) * shifted_intensity;
-	if (0.0 <= higher && higher < 3.0)
-		rgb[int(higher)] = fade(t) * shifted_intensity;
-	else if (int(higher) == 3)
-		rgb[0] = fade(2.0 * t) * shifted_intensity / 2.0;
-
-	//if(shifted_wavelength <= 0.0)
-		//rgb = vec3(fade(-1.0/shifted_wavelength),0,0);
-	//else if (shifted_wavelength <= 1.0)
-		//rgb = vec3(fade(1.0-t),fade(t),0);
-	//else if (shifted_wavelength <= 2.0)
-		//rgb = vec3(0,fade(1.0-t),fade(t));
-	//else if (shifted_wavelength <= 3.0)
-		//rgb = vec3(0.5*fade(t),0,fade(1.0/(shifted_wavelength-2.0)));
-	//else
-		//rgb = vec3(0.5*fade(1.0/(shifted_wavelength-3.0)),0,fade(1.0/(shifted_wavelength-2.0)));
-
-	return rgb;
 }
 
 vec4 int_to_color(int value) {

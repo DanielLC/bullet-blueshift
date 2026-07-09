@@ -1,7 +1,6 @@
 using Godot;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 
 public partial class Entity : Node2D
 {
@@ -13,19 +12,19 @@ public partial class Entity : Node2D
 	public Entity BaseEntity;
 	virtual public float Time => Path.EndTime;
 	private static readonly Dictionary<string, Texture2D> textureCache = [];
-	private static readonly PackedScene ExplosionScene = (PackedScene)ResourceLoader.Load("res://main/Explosion.tscn");
+	//private static readonly PackedScene ExplosionScene = (PackedScene)ResourceLoader.Load("res://main/Explosion.tscn");
 	private Area2D area;
 	private CircleShape2D shape;
 	public ScriptContext scriptContext;
 	public float hp;
 
-	public void Explode(float size, float brightness)
+	/*public Explosion Explode()
 	{
-		Explosion explosion = (Explosion)ExplosionScene.Instantiate();
-		explosion.Initialize(player, size, brightness, Path.GetEndPOR());
-		GD.Print("Entity.Explode: ", player);
+		var explosion = (Explosion)ExplosionScene.Instantiate();
+		explosion.Initialize(player, Path.GetEndPOR());
 		player.AddChild(explosion);
-	}
+		return explosion;
+	}*/
 
 	public void Translate(Event e)
 	{
@@ -182,6 +181,10 @@ public partial class Entity : Node2D
 			return;
 		}
 		(var relativePOR, float t) = Path.Seen(player.por);
+		if (player.explosion != null && this != player.playerEntity && player.explosion.Contains(player.por * relativePOR.GetEvent()))
+		{
+			Die();
+		}
 		SetPosition(relativePOR);
 		//sprite.Modulate = GetColor(GetDoppler(relativePOR));
 		if (shader != null)
@@ -290,6 +293,8 @@ public partial class Entity : Node2D
 				// GD.Print($"{area.CollisionLayer == Ally}");
 				if (area.CollisionLayer == Ally)
 				{
+					if(player.explosion == null)
+						player.Explode();
 					GD.Print("Entity.OnAreaEntered: Player Dead"); // TODO: Figure out something cooler. Maybe have an explosion clear out all the enemies, starting you over.
 				}
 				else

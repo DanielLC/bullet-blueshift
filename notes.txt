@@ -1,29 +1,7 @@
-I'm trying to make the exploding star from the original.
-
-I accelerate for a certain amount of time, then fire a bullet which slows to a stop, while moving twice that distance before firing another bullet, and repeat. I also need to make sure times are synchronized, so I'll need both t and tau (or as I've been calling it, s). And I'll say x is distance. And n is the number of bullets.
-
-Given v, total_distance, n
-x = total_distance/(2*n)
-rapidity = atanh(v)
-rapidity = a*tau
-t = sinh(tau*a) / a
-x^2 = t^2 + 1 / a^2
-
-Let's try this with a and x instead.
-t = sqrt(x^2 - a^-2)
-tau = asinh(t*a)
-v = tanh(a*tau)
-gamma = 1/sqrt(1-v^2)
-	= cosh(a*tau)
-
-First, accelerate at a for tau, then fire a bullet accelerating at -a for tau
-Next, it has to move a distance of 2x. Which without relativity, would be a time of 2x/v, but with it, it's 2x/(gamma*v) = 2x/sinh(a*tau).
-
 TODO:
 
 I want to make it so the player can set scripts to run on collisions. But then they'd also need variables. I think I need to make the language object-oriented.
 I'd really like to change this language to be more C-like. I think I see how it can be done. I need a function that looks through it character by character, checking for {, }, ;, and strings and comments. And also backslashes in the strings.
-I think there was a bug initializing a global variable and setting it inside a function. Do I even want global variables?
 
 Necessary for pre-alpha:
 
@@ -34,7 +12,7 @@ Other:
 
 Make it so enemies can have multiple overlapping sprites spinning at different rates
 	Ideally this can be done with the shader, but a less performant and more flexible version can be done by letting emitters have sprites
-Separate compound_shader into shader include files
+	The shader is done. Though I need to update the color part to use the include. But I haven't actually started using it yet.
 Elif statements
 Circular screen
 

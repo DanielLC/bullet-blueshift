@@ -13,12 +13,25 @@ public partial class Player : Node2D
 
     public PointOfReference por;
     private static readonly PackedScene EntityScene = (PackedScene)ResourceLoader.Load("res://main/Entity.tscn");
-    private Entity playerEntity;
+    public Entity playerEntity;
     private ScriptVM playerScript;
     private static Player instance;
     private Exception exception = null;
     private bool hasError = false;
     public static CanvasLayer uiRoot;
+    public Explosion explosion;
+    private const float EXPLOSION_DURATION = 2f;
+    private float explosionTime = float.PositiveInfinity;
+	private static readonly PackedScene ExplosionScene = (PackedScene)ResourceLoader.Load("res://main/Explosion.tscn");
+
+	public void Explode()
+	{
+		explosion = (Explosion)ExplosionScene.Instantiate();
+		explosion.Initialize(this, por);
+        explosionTime = playerEntity.Path.EndTime;
+		//explosion.Initialize(this, size, brightness, Path.GetEndPOR());
+		AddChild(explosion);
+	}
 
     public static Player Instance { get { return instance; } }
     public Player()
@@ -79,6 +92,15 @@ public partial class Player : Node2D
             var dir = new Vector2(x, y).Normalized() * deltaF * ACCELERATION;
             var v = Velocity.FromRapidity(dir.X, dir.Y);
             por.RecalculateInverse();   //I probably don't have to do this every time, but I'll do it for now.*/
+
+            if(playerEntity.Path.EndTime > explosionTime + EXPLOSION_DURATION)
+            {
+                explosionTime = float.PositiveInfinity;
+                explosion.QueueFree();
+                explosion = null;
+                ScriptContext.DidExplode = true;
+                GD.Print("Player._Process: Explosion despawned.");
+            }
 
             for (int _ = 0; !playerScript.nextFrame; ++_)
             {

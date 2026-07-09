@@ -87,10 +87,21 @@ subroutine exploder(size, brightness)
 	explode(size, brightness)
 end
 
+subroutine shrapnel(a, accelTime, restTime)
+	setParameters("star2.png", 0.03, random() * 6 - 3)
+	accelerate(a, random() * 360, accelTime)
+	accelerate(0, 0, restTime)
+end
+
 subroutine dot(a, accelTime, restTime)
-	setParameters("star2.png", 0.03, 3)
+	setParameters("star2.png", 0.03, 0)
 	accelerate(a, 180, accelTime)
-	accelerate(0, 0, restTime+1)
+	accelerate(0, 0, restTime)
+	spawn shrapnel(a, 0.2, 5)
+	spawn shrapnel(a, 0.2, 5)
+	spawn shrapnel(a, 0.2, 5)
+	spawn shrapnel(a, 0.2, 5)
+	spawn shrapnel(a, 0.2, 5)
 end
 
 subroutine dottedLine(a, dist, n)
@@ -101,12 +112,10 @@ subroutine dottedLine(a, dist, n)
 	var gamma = 1.0/sqrt(1-v*v)
 	var restTime = 2.0*x/v
 	var restProperTime = restTime/gamma
-	print([a, dist, n, x, t, tau, v, gamma, restTime, restProperTime])
 
 	setParameters("star2.png", 0.03, 0)
 	accelerate(a, 0, tau)
 	while n > 1:
-		print("Spawning dot")
 		spawn dot(a, tau, n * restTime)
 		accelerate(0, 0, restProperTime)
 		n -= 1
@@ -122,7 +131,7 @@ subroutine move(a, dist, dir)
 end
 
 subroutine explodingStarBullet(a, dist, n)
-	#Calling this seems to override the perameters of the function you're in. This is a big bug.
+	setParameters("star2.png", 0.03, 0)
 	call move(a, dist, 0)
 	#Rotate didn't work
 	rotate(180-18)
@@ -138,14 +147,22 @@ subroutine explodingStar(a, dist, n)
 	end
 end
 
+subroutine testBullet(x)
+	displace(x, 0)
+	setParameters("star2.png", 0.03, 0)
+	setEnemyBullet(1)
+	accelerate(0, 0, 10)
+end
+
 subroutine init()
 	setParameters("ship.png", 0.06, 0)
 	setAlly()
-	spawn explodingStar(1, 0.3, 10)
+	#spawn explodingStar(1, 0.3, 10)
 	#spawn dot(0.2, 1, 10)
-	#spawn testBullet(0.1)
-	#spawn enemy()
-	#explode(2, 1)
+	#spawn testBullet(0.25)
+	#spawn testBullet(0.0)
+	spawn enemy()
+	#explode()
 	#emitter shoot()
 	#var ui = panel(0,0.1,0.2,0.3)
 	#setColor(ui, "red")
@@ -154,11 +171,15 @@ subroutine init()
 end
 subroutine process()
 	var a = 0.2
-	var frameTime = 1.0/60.0
+	var frameTime = 1.0/30.0
 	
 	#dir = mouseDirection()
 	var dir = wasdDirection()
 	accelerate(a, dir, frameTime)
+	
+	if didExplode():
+		spawn enemy()
+	end
 end
 
 call init()

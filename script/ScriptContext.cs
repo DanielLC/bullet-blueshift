@@ -8,15 +8,25 @@ public partial class ScriptContext : RefCounted
     private Entity entity;
     private ScriptVM scriptVM;
     private const float DEG_TO_RAD = Mathf.Pi / 180;
+    public static bool DidExplode;
     public ScriptContext(ScriptVM scriptVM)
     {
         this.scriptVM = scriptVM;
         entity = scriptVM.entity;
     }
 
-    public void explode(float size, float brightness)
+    /*public void explode()
     {
-        entity.Explode(size, brightness);
+        entity.Explode();
+    }*/
+    public bool didExplode()
+    {
+        if(DidExplode)
+        {
+            DidExplode = false;
+            return true;
+        }
+        return false;
     }
     public void displace(float r, float degrees, float time)
     {
@@ -220,9 +230,9 @@ public partial class ScriptContext : RefCounted
     // Random functions
     public float random() => rng.Randf();
     // Random functions
-    public float random(float max) => rng.Randf() * max;
+    //public float random(float max) => rng.Randf() * max;
     // Random functions
-    public float random(float min, float max) => rng.RandfRange(min, max);
+    //public float random(float min, float max) => rng.RandfRange(min, max);
     public int randInt(int min, int max) => rng.RandiRange(min, max);
     public float normal(float mean, float deviation) => rng.Randfn(mean, deviation);
 }
