@@ -1,3 +1,13 @@
+Bugs:
+
+Definitely something wrong with the point of reference of an emitter. I had something moving towards the player, accelerate away, and stop. The bullets seem to be moving towards the player too fast, and even though I don't create the emitter until after the ship stops, it takes a second for the bullets to stop.
+
+Looking more carefully, it started firing in the past. I think the problem is the emitters start at proper time = 0 instead of when they're spawned.
+
+I set the time to when it spawned, and now it doesn't seem to run at all?
+
+por == null. I think it's trying to spawn stuff in the future now.
+
 TODO:
 
 I want to make it so the player can set scripts to run on collisions. But then they'd also need variables. I think I need to make the language object-oriented.
@@ -30,3 +40,12 @@ There is currently no elif.
 You can technically read arrays and fields, but there's no way to create them or write to them.
 Commands cannot be printed across lines.
 Commands are case insensitive. Nothing else is. I should probably just make them case sensitive.
+
+Useful equations:
+
+v = tanh(a*tau)
+dist = 1/a(cosh(a*tau) - 1)
+a*t = sinh(a*tau)
+(dist - 1/a)^2 = t^2 + a^-2
+gamma = cosh(a*tau)
+rapidity = a*tau

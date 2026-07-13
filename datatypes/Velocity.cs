@@ -1,11 +1,14 @@
 using Godot;
 using System;
+using System.Security.AccessControl;
 
 public partial class Velocity : Node
 {
     public float x;
     public float y;
     public float t;
+
+    public static Velocity REST = new Velocity(0, 0, 1);
     
     //Velocity is stored as a vector representing the path through spacetime after one second from its frame of reference.
     //Entering three values will treat it as that vector.
@@ -17,7 +20,7 @@ public partial class Velocity : Node
 		this.t = gamma;
     }
 
-    public Velocity(float x, float y, float t) {
+    private Velocity(float x, float y, float t) {
 		this.x = x;
 		this.y = y;
 		this.t = t;
@@ -29,10 +32,15 @@ public partial class Velocity : Node
 		this.t = v.Z;
     }
 
+    public static Velocity Polar(float v, float radians)
+    {
+        return new Velocity(v * Mathf.Cos(radians), v * Mathf.Sin(radians));
+    }
+
     public static Velocity FromRapidity(float x, float y) {
         var magnitude = Mathf.Sqrt(x*x + y*y);
         if(magnitude == 0)
-            return new Velocity(0, 0, 1);
+            return REST;
         var speed = Mathf.Tanh(magnitude);
         var multiplier = speed/magnitude;
         return new Velocity(x*multiplier, y*multiplier);

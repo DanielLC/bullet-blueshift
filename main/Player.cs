@@ -188,6 +188,10 @@ public partial class Player : Node2D
         //     message = $"ERROR on line {lineNumber + 1}: {Script.lines[lineNumber].Trim()}\n{message}";
         throw new ScriptException(message, lineNumber);
     }
+    public static void RuntimeError(int instructionPointer, string message)
+    {
+        Error(Script.instructions[instructionPointer].line, message);
+    }
 
     private void CatchError(Exception e)
     {

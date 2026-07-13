@@ -28,6 +28,10 @@ public partial class ScriptContext : RefCounted
         }
         return false;
     }
+    public float getTime()
+    {
+        return entity.Time;
+    }
     public void displace(float r, float degrees, float time)
     {
         entity.Translate(new Event(r * sin(degrees), -r * cos(degrees), time));
@@ -36,19 +40,27 @@ public partial class ScriptContext : RefCounted
     {
         entity.Translate(new Event(r * sin(degrees), -r * cos(degrees), -r));
     }
+    public void boost(float v, float degrees)
+    {
+        entity.Boost(new Velocity(v * sin(degrees), -v * cos(degrees)));
+    }
     public void setParameters(string sprite, float size, float rotationSpeed)
     {
         entity.SetParameters(sprite, size, rotationSpeed, scriptVM.InstructionPointer);
     }
     public void rotate(float degrees)
     {
-        entity.Path.Rotate(degrees * DEG_TO_RAD);
+        entity.Rotate(degrees * DEG_TO_RAD);
     }
     // This part is just ScriptContext. Emitters can't accelerate.
     public void accelerate(float acceleration, float degrees, float time)
     {
         entity.AddAcceleration(acceleration, (degrees + 180) * DEG_TO_RAD, time);
         scriptVM.timeToPause = true;
+    }
+    public void rest(float time)
+    {
+        entity.Rest(time);
     }
     public void wait(float time)
     {

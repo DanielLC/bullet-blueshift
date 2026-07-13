@@ -31,7 +31,7 @@ public partial class Rest : Path
 	}
 
 	public override Velocity GetVelocity(Event e) {
-		return new Velocity(0, 0, 1);
+		return Velocity.REST;
 	}
 
 	public override float GetAccel() {

@@ -39,7 +39,9 @@ public partial class ScriptVM : RefCounted
     public bool Run()
     {
         if (entity.Path.dead)
+        {
             return false;
+        }
         timeToPause = false;
         for (int _ = 0; _ < 256; ++_)
         {
@@ -104,7 +106,7 @@ public partial class ScriptVM : RefCounted
                         // I made it only run emitters slightly further into the past, but was that the best way to do it?
                         if (por == null)
                         {
-                            GD.Print("ScriptVM.Run: por == null");
+                            Player.RuntimeError(instructionPointer, "Tried to execute a script where point of reference was null.");
                             return false;
                         }
                         Player.SpawnEntity(0.01f, 0, por, instruction.a, newVars);
@@ -141,7 +143,7 @@ public partial class ScriptVM : RefCounted
             }
             instructionPointer++;
         }
-        Player.Error(Script.instructions[instructionPointer].line, "Infinite loop encountered containing this line.");
+        Player.RuntimeError(instructionPointer, "Infinite loop encountered containing this line.");
         return false;
     }
     public Event RunEntity()

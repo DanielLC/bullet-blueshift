@@ -43,6 +43,8 @@ public partial class Compound : Path
 
 	public void Boost(Velocity velocity)
 	{
+		GD.Print("Compound.Boost: " + velocity);
+		GD.Print("Compound.Boost: " + velocity.GetLorentz());
 		Transform(velocity.GetLorentz());
 	}
 
@@ -260,21 +262,31 @@ public partial class Compound : Path
 		return new Vector4(m.inverse.X.Z, m.inverse.Y.Z, m.inverse.Z.Z, m.inverse.W.Z);
 	}
 
-	public void AddAcceleration(float accel, float radians, float time)
+	public void Rest(float time)
 	{
 		Path path;
 		PointOfReference translate;
+		path = new Rest();
+		translate = PointOfReference.IDENTITY;
+		var transform = new Transform(path, endPORs[^1] * translate, 0);
+		PointOfReference end = transform.PointOfReferenceAtTime(time);
+		components.Add(transform);
+		times.Add(time + times[^1]);
+		events.Add(end.GetEvent());
+		coevents.Add(GetCoevent(end));
+		endPORs.Add(end);
+		UpdateShader();
+	}
+
+	public void AddAcceleration(float accel, float radians, float time)
+	{
 		if (accel == 0 || float.IsNaN(radians) || float.IsInfinity(radians))
 		{
-			path = new Rest();
-			translate = PointOfReference.IDENTITY;
-			radians = 0;
+			Rest(time);
+			return;
 		}
-		else
-		{
-			path = new Hyperbola(accel);
-			translate = new Event(0, -1 / accel, 0).GetTranslation();
-		}
+		var path = new Hyperbola(accel);
+		var translate = new Event(0, -1 / accel, 0).GetTranslation();
 		var rotate = PointOfReference.FromRotation(radians);
 		var transform = new Transform(path, endPORs[^1] * rotate * translate, radians);
 		PointOfReference end = transform.PointOfReferenceAtTime(time);

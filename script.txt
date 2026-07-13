@@ -21,17 +21,23 @@ subroutine spiral(accel, initialAngle, deltaAngle, deltaTime, airTime)
 	end
 end
 
-subroutine zigzagSpiral(accel, branches, minAngle, maxAngle, deltaAngle, deltaAngle2, deltaTime, airTime)
+subroutine zigzagSpiral(accel, branches, minAngle, maxAngle, deltaAngle, deltaAngle2, deltaTime, airTime, emitterTime)
+	var endTime = getTime() + emitterTime
 	var i = 0
 	var angle = minAngle
 	while true:
 		while angle < maxAngle:
 			i = 0
 			while i < branches:
+				print("Before spawn")
 				spawn missile(accel, angle + i*360/branches, airTime)
+				print("After spawn")
 				i += 1
 			end
 			wait(deltaTime)
+			if getTime() > endTime:
+				return
+			end
 			angle += deltaAngle
 		end
 		while angle > minAngle:
@@ -41,18 +47,33 @@ subroutine zigzagSpiral(accel, branches, minAngle, maxAngle, deltaAngle, deltaAn
 				i += 1
 			end
 			wait(deltaTime)
+			if getTime() > endTime:
+				return
+			end
 			angle -= deltaAngle2
 		end
 	end
 end
 
+subroutine approach(a, t, dir)
+	var tau = asinh(t * a)/a
+	var dist = sqrt(t*t + 1/(a*a)) - 1/a
+	var v = tanh(a*tau)
+	print([a, dir, tau])
+	displace(dist, dir, -dist)
+	boost(v, dir+180)
+	accelerate(a, dir, tau)
+end
+
 subroutine enemy()
-	displace(0.3, 0)
 	setEnemy(10)
 	setParameters("star2.png", 0.2, 0.2)
+	displace(0.3, 0)
+	call approach(0.05, 2, 0)
+	emitter zigzagSpiral(0.03, 6, 0, 60, 3, 10, 0.2, 10, 10)
+	#accelerate(0.1, 180, 1)
 	#emitter spiral(0.2, 0, goldenAngle, 0.03, 4)
-	emitter zigzagSpiral(0.03, 6, 0, 60, 3, 10, 0.2, 10)
-	wait(100)
+	rest(10)
 	#angle = 0
 	#while true:
 	#	accelerate(0.2, angle, 0.05)

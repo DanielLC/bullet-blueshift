@@ -35,7 +35,7 @@ public partial class Entity : Node2D
 	{
 		//TODO: Check for too many emitters.
 		//Emitter is a node. This is not the proper way to construct it.
-		Emitter emitter = new(this);
+		Emitter emitter = new(this, Time);
 		//GD.Print("Entity.NewEmitter: ", instructionPointer, "/", Script.instructions.Count, ", ", emitter.GetInstanceId());
 		ScriptVM script = new(emitter, instructionPointer, variables);
 		// These next two lines should be a little less efficient but a lot simpler than this big thing that comes after.
@@ -61,7 +61,7 @@ public partial class Entity : Node2D
 				return;
 			}
 		}
-		Player.Error(emitters.Peek().emitter.InstructionPointer, "Emitter got into an infinite loop containing this line on creation.");
+		Player.RuntimeError(emitters.Peek().emitter.InstructionPointer, "Emitter got into an infinite loop containing this line on creation.");
 	}
 
 	virtual public void UpdateEmitters(float t)
@@ -72,6 +72,7 @@ public partial class Entity : Node2D
 		for (int _ = 0; _ < 256; ++_)
 		{
 			(float time, ScriptVM emitter) = emitters.Peek();
+			 // GD.Print("Entity.UpdateEmitters: ", t, ", ", time);
 			if (t < time + 0.0001f)
 				return;
 			if (emitter.Run())
@@ -91,7 +92,7 @@ public partial class Entity : Node2D
 			if (emitters.IsEmpty)
 				return;
 		}
-		Player.Error(emitters.Peek().emitter.InstructionPointer, "Code entered an infinite loop containing this line.");
+		Player.RuntimeError(emitters.Peek().emitter.InstructionPointer, "Code entered an infinite loop containing this line.");
 	}
 
 	public PointOfReference PointOfReferenceAtTime(float s)
@@ -134,7 +135,7 @@ public partial class Entity : Node2D
 		Initialize(player, size, PointOfReference.IDENTITY, rotationSpeed);
 	}
 	//Note: This can be used to pre-load a texture.
-	public static Texture2D GetTexture(string path, int lineNumber)
+	public static Texture2D GetTexture(string path, int instructionPointer)
 	{
 		if (!textureCache.TryGetValue(path, out var texture))
 		{
@@ -146,7 +147,7 @@ public partial class Entity : Node2D
 				// TODO: Give the full error.
 				// It needs the line number too. Should I pass that in?
 				// Looks like GD.Load() is just throwing an exception.
-				Player.Error(lineNumber, $"No texture found at'{fullPath}'.");
+				Player.RuntimeError(instructionPointer, $"No texture found at'{fullPath}'.");
 			}
 			textureCache.Add(path, texture);
 		}
@@ -154,12 +155,12 @@ public partial class Entity : Node2D
 	}
 
 	// Maybe I should just make this work on Emitters. There are better ways to make ships with multiple spinning sprites, but until I add that, this is easy.
-	public void SetParameters(string spritePath, float size, float rotationSpeed, int lineNumber)
+	public void SetParameters(string spritePath, float size, float rotationSpeed, int instructionPointer)
 	{
 		var sprite = GetNode<MeshInstance2D>("MeshInstance2D");
 		if (sprite != null && sprite.Material is ShaderMaterial mat)
 		{
-			shader.SetShaderParameter("texture_sampler", GetTexture(spritePath, lineNumber));
+			shader.SetShaderParameter("texture_sampler", GetTexture(spritePath, instructionPointer));
 			shader.SetShaderParameter("size", size);
 			shader.SetShaderParameter("spin_speed", rotationSpeed);
 			sprite.Scale = new Vector2(size, size) * 4;
@@ -169,7 +170,7 @@ public partial class Entity : Node2D
 		}
 		else
 		{
-			Player.Error(lineNumber, "SetParameters() called on an Emitter. Emitters don't have sprites.");
+			Player.RuntimeError(instructionPointer, "SetParameters() called on an Emitter. Emitters don't have sprites.");
 		}
 	}
 
@@ -259,6 +260,19 @@ public partial class Entity : Node2D
 	{
 		Path.Extend(time);
 	}
+
+	virtual public void Rest(float time)
+	{
+		Path.Rest(time);
+	}
+	virtual public void Boost(Velocity v)
+	{
+		Path.Boost(v);
+	}
+	virtual public new void Rotate(float radians)
+	{
+		Path.Rotate(radians);
+	}
 	public Event GetEnd()
 	{
 		return Path.GetEnd();
@@ -274,20 +288,12 @@ public partial class Entity : Node2D
 	public const uint AllyBullet = 8u;
 	private void OnAreaEntered(Area2D otherArea)
 	{
-		//if(Path.dead) return;
-		//GD.Print($"Entity.OnAreaEntered: {area.CollisionLayer} collision with {otherArea.CollisionLayer}");
-		//GD.Print($"Entity.OnAreaEntered: {area.GlobalPosition} collision with {otherArea.GlobalPosition}");
 		var otherShape = (CircleShape2D)area.GetNode<CollisionShape2D>("CollisionShape2D").Shape;
-		//GD.Print(shape.Radius + otherShape.Radius);
-		//GD.Print($"Entity.OnAreaEntered: {area.GlobalScale} collision with {otherArea.GlobalScale}");
 		// If it's an ally or enemy, decrease the hp and then die.
 		if ((area.CollisionLayer & 0b11) != 0)
 		{
 			Entity other = otherArea.GetParent<Entity>();
-			// GD.Print("Entity.OnAreaEntered: ", other.scriptContext);
 			hp -= other.hp;
-			//GD.Print("Entity.OnAreaEntered: hp = ", hp);
-			GD.Print("Entity.OnAreaEntered: ", Engine.GetFramesDrawn());
 			if (hp <= 0)
 			{
 				// GD.Print($"{area.CollisionLayer == Ally}");
@@ -295,12 +301,9 @@ public partial class Entity : Node2D
 				{
 					if(player.explosion == null)
 						player.Explode();
-					GD.Print("Entity.OnAreaEntered: Player Dead"); // TODO: Figure out something cooler. Maybe have an explosion clear out all the enemies, starting you over.
 				}
 				else
 				{
-					// This happens twice on different frames. Are they not dying immediately?
-					GD.Print("Entity.OnAreaEntered: Enemy Dead ", Engine.GetFramesDrawn());
 					Die();
 				}
 			}
