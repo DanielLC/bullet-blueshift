@@ -71,6 +71,10 @@ public partial class ScriptContext : RefCounted
     {
         scriptVM.nextFrame = true;
     }
+    public void pause()
+    {
+        Player.Paused = true;
+    }
     // Here's some generally useful functions copied from the script in my old program.
     public float accelerationFromDistanceAndTime(float distance, float time)
     {
@@ -102,21 +106,43 @@ public partial class ScriptContext : RefCounted
         var key = OS.FindKeycodeFromString(keyName);
         return Input.IsKeyPressed(key);
     }
+    public float wasdLength()
+    {
+        Vector2 v = Input.GetVector("ui_left", "ui_right", "ui_down", "ui_up");
+        return v.Length();
+    }
     public float wasdDirection()
     {
-        float x = 0;
+        Vector2 v = Input.GetVector("ui_left", "ui_right", "ui_down", "ui_up");
+        return angleTo(v.X, v.Y);
+
+        /*float x = 0;
         float y = 0;
         if (Input.IsPhysicalKeyPressed(Key.W)) y += 1;
         if (Input.IsPhysicalKeyPressed(Key.A)) x -= 1;
         if (Input.IsPhysicalKeyPressed(Key.S)) y -= 1;
         if (Input.IsPhysicalKeyPressed(Key.D)) x += 1;
         // I think there might be something keeping it from reacting right to positive infinity?
-        return angleTo(x, y);
+        return angleTo(x, y);*/
     }
+    private float lastAngle = 0;
+
     // It might be better to combine these and add a way to read tuples into two variables.
     public float mouseDirection()
     {
-        Vector2 mouse;
+        Vector2 v = Input.GetVector("left", "right", "down", "up");
+        float angle = angleTo(v.X, v.Y);
+        if(float.IsNaN(angle))
+        {
+            angle = lastAngle;
+        }
+        else
+        {
+            lastAngle = angle;
+        }
+        return angle;
+
+        /*Vector2 mouse;
         try
         {
             mouse = entity.GetViewport().GetMousePosition();
@@ -129,7 +155,7 @@ public partial class ScriptContext : RefCounted
         Vector2 center = entity.GetViewportRect().Size * 0.5f;
         Vector2 relative = mouse - center;
         var angle = angleTo(relative.X, -relative.Y);
-        return angle;
+        return angle;*/
     }
     // If I have this one, I really should normalize it with screen size.
     public float mouseDistance()

@@ -11,6 +11,7 @@ public partial class Emitter : Entity
 	// path.PointOfReferenceAtTime() will return null if the Entity doesn't exist anymore. I'd add code to check for it, but what's it gonna do, return null?
 	override public PointOfReference GetEndPOR()
 	{
+		GD.Print($"Emitter.GetEndPOR: {Time}, {Path.EndTime}");
 		return Path.PointOfReferenceAtTime(Time);
 	}
 

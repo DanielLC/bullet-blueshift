@@ -23,6 +23,7 @@ public partial class Player : Node2D
     private const float EXPLOSION_DURATION = 2f;
     private float explosionTime = float.PositiveInfinity;
 	private static readonly PackedScene ExplosionScene = (PackedScene)ResourceLoader.Load("res://main/Explosion.tscn");
+    public static bool Paused = false;
 
 	public void Explode()
 	{
@@ -79,6 +80,8 @@ public partial class Player : Node2D
         }
         try
         {
+            if(Paused)
+                return;
             //GD.Print($"Player._Process: FPS: {1 / delta}");
             float deltaF = (float)delta;
             //var viewportSize = GetViewportRect().Size;

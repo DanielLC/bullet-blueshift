@@ -116,6 +116,11 @@ public partial class Compound : Path
 				return i - 1;
 			}
 		}
+		// If it's just past the end, it's probably a rounding error. Just say it's at the end.
+		if (s < times[^1] + 0.001f)
+		{
+			return times.Count - 2;
+		}
 		//It's after the object disappeared
 		return -1;
 	}

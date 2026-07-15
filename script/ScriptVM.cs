@@ -106,7 +106,8 @@ public partial class ScriptVM : RefCounted
                         // I made it only run emitters slightly further into the past, but was that the best way to do it?
                         if (por == null)
                         {
-                            Player.RuntimeError(instructionPointer, "Tried to execute a script where point of reference was null.");
+                            // Player.RuntimeError(instructionPointer, "Tried to execute a script where point of reference was null.");
+                            GD.Print("ScriptVM.Run: WARNING por = null");
                             return false;
                         }
                         Player.SpawnEntity(0.01f, 0, por, instruction.a, newVars);

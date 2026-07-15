@@ -5,7 +5,7 @@ subroutine missile(accel, angle, time)
 end
 
 subroutine missile2(accel, angle, accelTime, coastTime)
-	setAllyBullet(1)
+	#setAllyBullet(1)
 	setParameters("star2.png", 0.02, 2)
 	accelerate(accel, angle, accelTime)
 	accelerate(0, 0, coastTime)
@@ -175,35 +175,86 @@ subroutine testBullet(x)
 	accelerate(0, 0, 10)
 end
 
+subroutine circleAttack(a, period)
+	displace(0.25, 0)
+	var direction = 0
+	var steps = 16
+	while direction < 180:
+		accelerate(a, direction, period*1.0/steps)
+		direction += 720.0/steps
+	end
+	while true:
+		accelerate(a, direction, period*1.0/steps)
+		direction += 360.0/steps
+		var angle = 0
+		while angle < 360
+			spawn missile2(1, angle, 0.2, 2)
+			angle += 60
+		end
+	end
+end
+
 subroutine init()
-	setParameters("ship.png", 0.06, 0)
+	setParameters("ship.png", 0.03, 0)
 	setAlly()
+	#emitter shoot()
+end
+
+subroutine levelStart()
 	#spawn explodingStar(1, 0.3, 10)
 	#spawn dot(0.2, 1, 10)
 	#spawn testBullet(0.25)
 	#spawn testBullet(0.0)
 	spawn enemy()
+	#spawn circleAttack(0.2, 3)
 	#explode()
-	#emitter shoot()
 	#var ui = panel(0,0.1,0.2,0.3)
 	#setColor(ui, "red")
 	#setText(ui, "red")
 	#setSprite(ui, "star2.png")
 end
+
 subroutine process()
-	var a = 0.2
-	var frameTime = 1.0/30.0
+	var a = 0.5
+	var frameTime = 1.0/60.0
 	
 	#dir = mouseDirection()
 	var dir = wasdDirection()
+	var acceleration = a * wasdLength()
 	accelerate(a, dir, frameTime)
 	
 	if didExplode():
-		spawn enemy()
+		call levelStart()
 	end
 end
 
+subroutine bullet()
+	var v = 0.2
+	displace(0.085, 0)
+	displace(v, 90, -1.15)
+	boost(v, 270)
+	setParameters("Bullet.png", 0.5, 0)
+	rest(20)
+end
+
+subroutine blueshift()
+	var v = 0.2
+	displace(0.075, 180)
+	displace(v, 270, -1.15)
+	boost(v, 90)
+	setParameters("Blueshift.png", 0.5, 0)
+	rest(20)
+end
+
+#spawn bullet()
+#spawn blueshift()
+
+#setParameters("ship.png", 0.04, 0)
+#pause()
+#nextFrame()
+
 call init()
+call levelStart()
 while true:
 	call process()
 	nextFrame()
