@@ -24,6 +24,7 @@ public partial class Player : Node2D
     private float explosionTime = float.PositiveInfinity;
 	private static readonly PackedScene ExplosionScene = (PackedScene)ResourceLoader.Load("res://main/Explosion.tscn");
     public static bool Paused = false;
+    public static float FrameTime = 0;
 
 	public void Explode()
 	{
@@ -70,6 +71,17 @@ public partial class Player : Node2D
         //var enemy = SpawnEntity(0.1f, 0f, new Event(0, 0.2f, 0.3f).GetTranslation());
     }
 
+    public void KillAllEnemies()
+    {
+        foreach (var child in GetChildren())
+        {
+            if (child is Entity entity && child != playerEntity)
+            {
+                entity.Die();
+            }
+        }
+    }
+
     public override void _Process(double delta)
     {
         if (hasError)
@@ -83,7 +95,7 @@ public partial class Player : Node2D
             if(Paused)
                 return;
             //GD.Print($"Player._Process: FPS: {1 / delta}");
-            float deltaF = (float)delta;
+            FrameTime = (float)delta;
             //var viewportSize = GetViewportRect().Size;
             //Position = viewportSize / 2;
             //Scale = Mathf.Min(viewportSize.X, viewportSize.Y) * SCALE * Vector2.One;
@@ -102,6 +114,7 @@ public partial class Player : Node2D
                 explosion.QueueFree();
                 explosion = null;
                 ScriptContext.DidExplode = true;
+                KillAllEnemies();
                 GD.Print("Player._Process: Explosion despawned.");
             }
 

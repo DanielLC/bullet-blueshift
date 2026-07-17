@@ -1,22 +1,38 @@
-subroutine missile(accel, angle, time)
+subroutine missile(accel, angle, time, coastTime)
+	rotate(angle)
 	setEnemyBullet(1)
-	setParameters("star2.png", 0.02, 2)
-	accelerate(accel, angle, time)
+	setParameters("star3.png", 0.02, 2)
+	accelerate(accel, 0, time)
+	rest(coastTime)
 end
 
 subroutine missile2(accel, angle, accelTime, coastTime)
 	#setAllyBullet(1)
-	setParameters("star2.png", 0.02, 2)
-	accelerate(accel, angle, accelTime)
-	accelerate(0, 0, coastTime)
+	rotate(angle)
+	setParameters("crescent.png", 0.02, 0)
+	accelerate(accel, 0, accelTime)
+	rest(coastTime)
 end
 
 subroutine spiral(accel, initialAngle, deltaAngle, deltaTime, airTime)
 	var angle = initialAngle
 	while true:
-		spawn missile(accel, angle, airTime)
+		spawn missile(accel, angle, airTime, 1)
 		wait(deltaTime)
 		angle += deltaAngle
+		angle %= 360
+	end
+end
+
+subroutine changingSpiral(accel, initialAngle, deltaAngle, deltaTime, airTime)
+	var angle = 0
+	var delta = initialAngle
+	while true:
+		spawn missile(accel, angle, airTime, 1)
+		wait(deltaTime)
+		delta += deltaAngle
+		delta %= 360
+		angle += delta
 		angle %= 360
 	end
 end
@@ -30,7 +46,7 @@ subroutine zigzagSpiral(accel, branches, minAngle, maxAngle, deltaAngle, deltaAn
 			i = 0
 			while i < branches:
 				print("Before spawn")
-				spawn missile(accel, angle + i*360/branches, airTime)
+				spawn missile(accel, angle + i*360/branches, airTime, 1)
 				print("After spawn")
 				i += 1
 			end
@@ -43,7 +59,7 @@ subroutine zigzagSpiral(accel, branches, minAngle, maxAngle, deltaAngle, deltaAn
 		while angle > minAngle:
 			i = 0
 			while i < branches:
-				spawn missile(accel, angle + i*360/branches, airTime)
+				spawn missile(accel, angle + i*360/branches, airTime, 1)
 				i += 1
 			end
 			wait(deltaTime)
@@ -67,13 +83,15 @@ end
 
 subroutine enemy()
 	setEnemy(10)
-	setParameters("star2.png", 0.2, 0.2)
+	setParameters("star2.png", 0.2, 2)
 	displace(0.3, 0)
-	call approach(0.05, 2, 0)
-	emitter zigzagSpiral(0.03, 6, 0, 60, 3, 10, 0.2, 10, 10)
+	call approach(0.05, 5, 0)
+	#emitter zigzagSpiral(0.03, 6, 0, 60, 3, 10, 0.2, 10, 10)
 	#accelerate(0.1, 180, 1)
 	#emitter spiral(0.2, 0, goldenAngle, 0.03, 4)
-	rest(10)
+	#emitter changingSpiral(0.2, 0, 1, 0.03, 1)
+	call boomerangAttack()
+	rest(100)
 	#angle = 0
 	#while true:
 	#	accelerate(0.2, angle, 0.05)
@@ -99,6 +117,7 @@ subroutine shoot()
 			spawn missile2(a, dir + accuracy * (random() - 0.5), accelTime, coastTime)
 		end
 		wait(fireDelay)
+		#wait(fireDelay * -log(random()))
 	end
 end
 
@@ -168,13 +187,7 @@ subroutine explodingStar(a, dist, n)
 	end
 end
 
-subroutine testBullet(x)
-	displace(x, 0)
-	setParameters("star2.png", 0.03, 0)
-	setEnemyBullet(1)
-	accelerate(0, 0, 10)
-end
-
+#I couldn't get this one to act how I wanted.
 subroutine circleAttack(a, period)
 	displace(0.25, 0)
 	var direction = 0
@@ -194,10 +207,79 @@ subroutine circleAttack(a, period)
 	end
 end
 
+subroutine boomerang(angle1, a1, t1, rest1, angle2, a2, t2, angle3, a3, t3)
+	setEnemyBullet(1)
+	setParameters("shuriken.png", 0.02, 4)
+	accelerate(a1, angle1, t1)
+	rest(rest1)
+	accelerate(a2, angle2, t2)
+	accelerate(a3, angle3, t3)
+end
+
+subroutine boomerangAttack()
+	var n = 7
+	var fireRate = 0.03
+	var phaseTwo = getTime() + 5
+	
+	var deltaAngle = 360/n
+	var angle = 0
+	while getTime() < phaseTwo:
+		#spawn boomerang(angle, 0.5, 0.25, 3, angle+155, 0.5, 0.5, 3)
+		var extraRest = 0.2*(phaseTwo - getTime())
+		spawn boomerang(angle, 0.2, 1.7 + extraRest, 0, angle+156, 0.5, 1, angle + 200, 0.1, 2 + extraRest)
+		angle += deltaAngle
+		angle %= 360
+		rest(fireRate)
+	end
+	
+	while true:
+		#accelerate for 0 time, so wait() will extend that.
+		#accelerate(0.05, random()*360, fireRate)
+		var direction = random()*360
+		var nextAccel = getTime() + 2
+		deltaAngle = (360 + 5*(2*random()-1))/n
+		while getTime() < nextAccel:
+			#spawn boomerang(angle, 0.5, 0.25, 3, angle+155, 0.5, 0.5, 3)
+			spawn boomerang(angle, 0.2, 1.7, 0, angle+156, 0.5, 1, angle + 200, 0.1, 2)
+			angle += deltaAngle
+			angle %= 360
+			#wait(fireRate)
+			accelerate(0.01, direction, fireRate)
+		end
+	end
+end
+
+#There aren't currently attacks in here, and you'll need to adjust attacks as needed.
+subroutine cycleAttacks()
+	var attacks = 3
+	var lastAttack = -1
+	var curAttack = -1
+	while true:
+		#Pick a random attack and make sure it's not the last one.
+		while curAttack == lastAttack:
+			curAttack = randInt(1, attacks)
+		end
+		lastAttack = curAttack
+		
+		#Call the current attack
+		if curAttack == 1:
+			#call attack1()
+		end
+		if curAttack == 2:
+			#call attack2()
+		end
+		if curAttack == 3:
+			#call attack3()
+		end
+		
+		#Stuff that happens between attacks goes here. I'm thinking an explosion sending bullets in all directions at once, and reset HP.
+	end
+end
+
 subroutine init()
 	setParameters("ship.png", 0.03, 0)
 	setAlly()
-	#emitter shoot()
+	emitter shoot()
 end
 
 subroutine levelStart()
@@ -215,13 +297,12 @@ subroutine levelStart()
 end
 
 subroutine process()
-	var a = 0.5
-	var frameTime = 1.0/60.0
+	var a = 0.35
 	
 	#dir = mouseDirection()
 	var dir = wasdDirection()
 	var acceleration = a * wasdLength()
-	accelerate(a, dir, frameTime)
+	accelerate(acceleration, dir, frameTime())
 	
 	if didExplode():
 		call levelStart()

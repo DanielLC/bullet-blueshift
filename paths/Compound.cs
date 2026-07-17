@@ -50,7 +50,7 @@ public partial class Compound : Path
 
 	public void Rotate(float radians)
 	{
-		GD.Print($"Compound.Rotate: Rotated by {radians} radians");
+		//GD.Print($"Compound.Rotate: Rotated by {radians} radians");
 		Transform(PointOfReference.FromRotation(radians));
 	}
 
@@ -307,6 +307,7 @@ public partial class Compound : Path
 	{
 		if (dead)
 			return;
+		AddAcceleration(0, 0, time);
 		if (components.Count == 0)
 		{
 			AddAcceleration(0, 0, time);

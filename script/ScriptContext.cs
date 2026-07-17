@@ -61,6 +61,7 @@ public partial class ScriptContext : RefCounted
     public void rest(float time)
     {
         entity.Rest(time);
+        scriptVM.timeToPause = true;
     }
     public void wait(float time)
     {
@@ -165,6 +166,8 @@ public partial class ScriptContext : RefCounted
         Vector2 relative = mouse - center;
         return relative.Length();
     }
+
+    public float frameTime() => Player.FrameTime;
 
     /*public void setLayer(int layer)
     {

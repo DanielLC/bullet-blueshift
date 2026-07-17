@@ -1,3 +1,10 @@
+Bugs:
+wait() seems to take too long. Maybe if you use it too late? Maybe if it's in a function that's getting called?
+
+Doing:
+
+No time for more features, and the ones I have seem to be bug free. I've added some sprites, so it's time to focus on bullet patterns.
+
 TODO:
 
 I want to make it so the player can set scripts to run on collisions. But then they'd also need variables. I think I need to make the language object-oriented.
@@ -30,6 +37,7 @@ There is currently no elif.
 You can technically read arrays and fields, but there's no way to create them or write to them.
 Commands cannot be printed across lines.
 Commands are case insensitive. Nothing else is. I should probably just make them case sensitive.
+nextFrame() ends the frame the next time it does something that takes time (like making the player accelerate) rather than immediately. Which can cause problems if you have GUI calls after it or want to pause by calling it over and over.
 
 Useful equations:
 
